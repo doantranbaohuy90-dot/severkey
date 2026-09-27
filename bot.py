@@ -1,8 +1,7 @@
 # bot.py - Telegram Bot + Web Server tích hợp
 # Tác giả: MADE BY Bao Huy
 # Chạy: python bot.py
-# Yêu cầu: key.py, auth.py, apikey.py, db.py
-# Không cần app.py riêng
+# Yêu cầu: key.py, auth.py, apikey.py, db.py cùng thư mục
 
 import os
 import sys
@@ -30,11 +29,18 @@ try:
     )
 except ImportError as e:
     print(f"[BOT] Thiếu module nội bộ: {e}")
-    print("[BOT] Cần có: key.py, auth.py, apikey.py, db.py cùng thư mục")
-    # Không thoát - vẫn chạy HTTP server để Render không báo lỗi port
     keymod = None
     authmod = None
     apikey = None
+
+    def now_ms():
+        return int(time.time() * 1000)
+
+    def fmt_time(ms):
+        try:
+            return datetime.fromtimestamp(ms / 1000).strftime("%Y-%m-%d %H:%M:%S")
+        except Exception:
+            return "-"
 
 # ============================================================
 # CẤU HÌNH
@@ -49,7 +55,6 @@ ADMIN_IDS = set(
 
 DEFAULT_DAYS = 30
 DEFAULT_MAX_DEVICES = 1
-
 if keymod:
     DEFAULT_DAYS = getattr(keymod, "DEFAULT_DAYS", 30)
     DEFAULT_MAX_DEVICES = getattr(keymod, "DEFAULT_MAX_DEVICES", 1)
@@ -75,6 +80,7 @@ _bot_state = {
     "started_at": now_ms(),
     "updates_handled": 0,
     "commands_handled": 0,
+    "callbacks_handled": 0,
     "errors": 0,
     "last_error": None,
 }
@@ -200,6 +206,10 @@ def edit_message(chat_id, message_id, text, parse_mode="HTML", reply_markup=None
     res = tg_call("editMessageText", payload)
     return bool(res and res.get("ok"))
 
+def delete_message(chat_id, message_id):
+    res = tg_call("deleteMessage", {"chat_id": chat_id, "message_id": message_id})
+    return bool(res and res.get("ok"))
+
 def send_inline_keyboard(chat_id, text, buttons, parse_mode="HTML"):
     return send_message(chat_id, text, parse_mode=parse_mode,
                         reply_markup={"inline_keyboard": buttons})
@@ -211,8 +221,28 @@ def answer_callback(cb_id, text="", show_alert=False):
         "show_alert": show_alert,
     })
 
+def send_chat_action(chat_id, action="typing"):
+    tg_call("sendChatAction", {"chat_id": chat_id, "action": action})
+
 def get_me():
     res = tg_call("getMe", {}, timeout=10)
+    if res and res.get("ok"):
+        return res.get("result")
+    return None
+
+def set_webhook(url, secret_token=None):
+    payload = {
+        "url": url,
+        "drop_pending_updates": "true",
+        "allowed_updates": json.dumps(["message", "callback_query"]),
+    }
+    if secret_token:
+        payload["secret_token"] = secret_token
+    res = tg_call("setWebhook", payload)
+    return bool(res and res.get("ok"))
+
+def get_webhook_info():
+    res = tg_call("getWebhookInfo", {}, timeout=10)
     if res and res.get("ok"):
         return res.get("result")
     return None
@@ -222,8 +252,6 @@ def get_me():
 # ============================================================
 
 def is_ctv(user_id):
-    if not keymod:
-        return False
     try:
         row = fetchone("SELECT user_id FROM ctv WHERE user_id = ? AND active = 1",
                        (str(user_id),))
@@ -258,6 +286,49 @@ def increment_ctv_count(user_id):
     except Exception:
         pass
 
+def add_ctv(user_id, name=None, max_keys=None, max_days=None):
+    uid = str(user_id)
+    name = name or f"ctv_{uid}"
+    max_keys = int(max_keys) if max_keys is not None else CTV_MAX_KEYS
+    max_days = int(max_days) if max_days is not None else CTV_MAX_DAYS
+    try:
+        existing = fetchone("SELECT user_id FROM ctv WHERE user_id = ?", (uid,))
+        if existing:
+            update("ctv", {"name": name, "max_keys": max_keys,
+                            "max_days": max_days, "active": 1},
+                   "user_id = ?", (uid,))
+        else:
+            insert("ctv", {
+                "user_id": uid, "name": name,
+                "max_keys": max_keys, "max_days": max_days,
+                "keys_created": 0, "added_at": now_ms(), "active": 1,
+            })
+        return True
+    except Exception as e:
+        print(f"[BOT] add_ctv lỗi: {e}")
+        return False
+
+def remove_ctv(user_id):
+    uid = str(user_id)
+    try:
+        row = fetchone("SELECT user_id FROM ctv WHERE user_id = ?", (uid,))
+        if not row: return False
+        execute("DELETE FROM ctv WHERE user_id = ?", (uid,))
+        return True
+    except Exception:
+        return False
+
+def toggle_ctv(user_id):
+    uid = str(user_id)
+    try:
+        row = fetchone("SELECT active FROM ctv WHERE user_id = ?", (uid,))
+        if not row: return None
+        new_state = 0 if row["active"] else 1
+        execute("UPDATE ctv SET active = ? WHERE user_id = ?", (new_state, uid))
+        return bool(new_state)
+    except Exception:
+        return None
+
 # ============================================================
 # USER / KEY
 # ============================================================
@@ -281,7 +352,6 @@ def get_or_create_key_for_user(user_id, owner=None, days=None,
                                 max_devices=None, created_by=None):
     if not keymod:
         return {"created": False, "key": None, "error": "module key lỗi"}
-
     uid = str(user_id)
     if AUTO_ISSUE_ONCE:
         existing = get_key_by_user(uid)
@@ -292,15 +362,15 @@ def get_or_create_key_for_user(user_id, owner=None, days=None,
                     return {"created": False, "key": existing, "record": dict(row)}
             except Exception:
                 pass
-
     days = days if days is not None else DEFAULT_DAYS
     owner = owner or f"user_{uid}"
     max_devices = max_devices if max_devices is not None else DEFAULT_MAX_DEVICES
-
     try:
-        k, exp, sig = keymod.create_key(
-            days, owner, max_devices, user_id=uid, created_by=created_by)
+        k, exp, sig = keymod.create_key(days, owner, max_devices,
+                                         user_id=uid, created_by=created_by)
         link_key_to_user(uid, k)
+        if created_by:
+            increment_ctv_count(created_by)
         return {"created": True, "key": k, "expiresAt": exp, "signature": sig}
     except Exception as e:
         print(f"[BOT] create_key lỗi: {e}")
@@ -363,6 +433,21 @@ def notify_admins(message, level="info"):
     for admin_id in ADMIN_IDS:
         push_notify(admin_id, message, level)
 
+def notify_key_created(key, owner, days, by=None):
+    msg = (f"🔑 <b>Key mới</b>\n<code>{esc(key)}</code>\n"
+           f"Chủ: {esc(owner)}\nHạn: {days} ngày")
+    if by: msg += f"\nBởi: {esc(by)}"
+    notify_admins(msg)
+
+def notify_key_revoked(key, reason="unknown"):
+    notify_admins(f"⚠️ <b>Key bị thu hồi</b>\n<code>{esc(key)}</code>\n"
+                  f"Lý do: {esc(reason)}")
+
+def notify_device_blocked(device_id, key, reason="unknown"):
+    notify_admins(f"🚫 <b>Thiết bị bị block</b>\n"
+                  f"Device: <code>{esc(device_id)}</code>\n"
+                  f"Key: <code>{esc(key)}</code>\nLý do: {esc(reason)}")
+
 # ============================================================
 # TELEGRAM USER SYNC
 # ============================================================
@@ -382,12 +467,18 @@ def sync_telegram_user(user_id, username, first_name, last_name=None):
         if username: users[uid]["username"] = username
         if first_name: users[uid]["firstName"] = first_name
     write_json(TG_USERS_FILE, users)
+    if authmod:
+        try: authmod.link_telegram(uid, username)
+        except Exception: pass
 
 def get_telegram_user(user_id):
     return read_json(TG_USERS_FILE, {}).get(str(user_id))
 
 def list_telegram_users():
     return read_json(TG_USERS_FILE, {})
+
+def count_telegram_users():
+    return len(read_json(TG_USERS_FILE, {}))
 
 # ============================================================
 # HELP & MENU
@@ -414,6 +505,7 @@ HELP_TEXT = """
 /revoke /delete
 /blockkey /unblockkey
 /blockdev /unblockdev /blocklist
+/addctv /removectv /ctvlist /togglectv
 /apikeys /newapikey /rotatekey
 /broadcast /botstats /health
 """.strip()
@@ -437,6 +529,61 @@ def cmd_menu(chat_id, user_id):
     send_inline_keyboard(chat_id, "<b>MENU CHÍNH</b>", buttons)
 
 # ============================================================
+# COMMAND HANDLERS
+# ============================================================
+
+def cmd_stats(chat_id, user_id):
+    if not is_admin(user_id):
+        send_message(chat_id, "Không có quyền.")
+        return
+    try:
+        row = fetchone("""
+            SELECT
+              (SELECT COUNT(*) FROM keys) AS total,
+              (SELECT COUNT(*) FROM keys WHERE active=1) AS active,
+              (SELECT COUNT(*) FROM devices) AS devices,
+              (SELECT COUNT(*) FROM accounts) AS accounts,
+              (SELECT COUNT(*) FROM ctv) AS ctv
+        """)
+        send_message(chat_id,
+            f"<b>THỐNG KÊ</b>\n"
+            f"Tổng key: {row['total']}\n"
+            f"Hoạt động: {row['active']}\n"
+            f"Thiết bị: {row['devices']}\n"
+            f"Tài khoản: {row['accounts']}\n"
+            f"CTV: {row['ctv']}")
+    except Exception as e:
+        send_message(chat_id, f"Lỗi: {e}")
+
+def cmd_botstats(chat_id, user_id):
+    if not is_admin(user_id):
+        send_message(chat_id, "Không có quyền.")
+        return
+    up = now_ms() - _bot_state["started_at"]
+    me = get_me()
+    send_message(chat_id,
+        f"<b>BOT STATS</b>\n"
+        f"Uptime: {humanize_delta(up)}\n"
+        f"Updates: {_bot_state['updates_handled']}\n"
+        f"Commands: {_bot_state['commands_handled']}\n"
+        f"Errors: {_bot_state['errors']}\n"
+        f"Bot: @{esc((me or {}).get('username', '-'))}\n"
+        f"Users: {count_telegram_users()}")
+
+def cmd_health(chat_id, user_id):
+    ok_db = False
+    try:
+        ok_db = fetchone("SELECT 1 AS x") is not None
+    except Exception:
+        pass
+    ok_bot = get_me() is not None
+    send_message(chat_id,
+        f"<b>HEALTH</b>\n"
+        f"DB: {'OK' if ok_db else 'FAIL'}\n"
+        f"Bot API: {'OK' if ok_bot else 'FAIL'}\n"
+        f"Uptime: {humanize_delta(now_ms() - _bot_state['started_at'])}")
+
+# ============================================================
 # CALLBACK HANDLER
 # ============================================================
 
@@ -445,6 +592,8 @@ def handle_callback(cb):
     chat_id = cb["message"]["chat"]["id"]
     user_id = str(cb["from"]["id"])
     data = cb.get("data", "")
+
+    _bot_state["callbacks_handled"] += 1
 
     if data == "menu":
         answer_callback(cb_id)
@@ -511,54 +660,13 @@ def handle_callback(cb):
         if keymod:
             try:
                 lines = keymod.render_tree_text(keymod.build_tree_view())
-                send_message(chat_id, "🌳\n" + ("\n".join(lines) if lines else "Chưa có key."))
+                send_message(chat_id, "🌳\n" +
+                             ("\n".join(lines) if lines else "Chưa có key."))
             except Exception:
                 send_message(chat_id, "Lỗi cây key.")
         return
 
     answer_callback(cb_id, "Không hỗ trợ")
-
-# ============================================================
-# COMMAND HANDLERS
-# ============================================================
-
-def cmd_stats(chat_id, user_id):
-    if not is_admin(user_id):
-        send_message(chat_id, "Không có quyền.")
-        return
-    try:
-        row = fetchone("""
-            SELECT
-              (SELECT COUNT(*) FROM keys) AS total,
-              (SELECT COUNT(*) FROM keys WHERE active=1) AS active,
-              (SELECT COUNT(*) FROM devices) AS devices,
-              (SELECT COUNT(*) FROM accounts) AS accounts,
-              (SELECT COUNT(*) FROM ctv) AS ctv
-        """)
-        send_message(chat_id,
-            f"<b>THỐNG KÊ</b>\n"
-            f"Tổng key: {row['total']}\n"
-            f"Hoạt động: {row['active']}\n"
-            f"Thiết bị: {row['devices']}\n"
-            f"Tài khoản: {row['accounts']}\n"
-            f"CTV: {row['ctv']}")
-    except Exception as e:
-        send_message(chat_id, f"Lỗi: {e}")
-
-def cmd_botstats(chat_id, user_id):
-    if not is_admin(user_id):
-        send_message(chat_id, "Không có quyền.")
-        return
-    up = now_ms() - _bot_state["started_at"]
-    me = get_me()
-    send_message(chat_id,
-        f"<b>BOT STATS</b>\n"
-        f"Uptime: {humanize_delta(up)}\n"
-        f"Updates: {_bot_state['updates_handled']}\n"
-        f"Commands: {_bot_state['commands_handled']}\n"
-        f"Errors: {_bot_state['errors']}\n"
-        f"Bot: @{esc((me or {}).get('username', '-'))}\n"
-        f"Users: {len(list_telegram_users())}")
 
 # ============================================================
 # SESSION INPUT
@@ -590,17 +698,54 @@ def handle_session_input(chat_id, user_id, text, session):
             max_dev = parse_int(text, 1) or 1
             days = data.get("days", 30)
             owner = data.get("owner", "unknown")
+            if is_ctv(user_id) and not is_admin(user_id):
+                ok, err = ctv_can_create(user_id, days)
+                if not ok:
+                    send_message(chat_id, f"Không thể tạo: {err}")
+                    clear_session(user_id)
+                    return
             if keymod:
                 try:
                     k, exp, sig = keymod.create_key(days, owner, max_dev)
-                    send_message(chat_id, f"<code>{esc(k)}</code>")
+                    if is_ctv(user_id):
+                        increment_ctv_count(user_id)
+                    notify_key_created(k, owner, days, by=user_id)
+                    send_message(chat_id,
+                        f"✅ <b>Key đã tạo</b>\n<code>{esc(k)}</code>\n"
+                        f"Chủ: {esc(owner)}\nHạn: {days} ngày\n"
+                        f"Max TB: {max_dev}")
                 except Exception as e:
                     send_message(chat_id, f"Lỗi: {e}")
             clear_session(user_id)
             return
 
+    if state == "broadcast":
+        msg = text
+        if len(msg) < 2:
+            send_message(chat_id, "Tin nhắn quá ngắn. Nhập lại hoặc /cancel:")
+            return
+        clear_session(user_id)
+        send_message(chat_id, "Đang gửi...")
+        threading.Thread(target=broadcast_worker,
+                         args=(msg,), daemon=True).start()
+        return
+
     clear_session(user_id)
     send_message(chat_id, "Phiên đã kết thúc.")
+
+def broadcast_worker(message):
+    users = list_telegram_users()
+    total = len(users)
+    ok = 0
+    fail = 0
+    for uid, info in users.items():
+        if info.get("blocked"): continue
+        if send_message(uid, message): ok += 1
+        else: fail += 1
+        time.sleep(BROADCAST_DELAY)
+    for admin_id in ADMIN_IDS:
+        send_message(admin_id,
+                     f"📢 Broadcast: {ok}/{total} thành công, {fail} lỗi.")
 
 # ============================================================
 # COMMAND HANDLER
@@ -667,9 +812,7 @@ def handle_command(chat_id, user_id, text):
         cmd_botstats(chat_id, user_id)
         return
     if cmd == "/health":
-        send_message(chat_id,
-            f"Uptime: {humanize_delta(now_ms() - _bot_state['started_at'])}\n"
-            f"Errors: {_bot_state['errors']}")
+        cmd_health(chat_id, user_id)
         return
     if cmd == "/cancel":
         clear_session(user_id)
@@ -744,11 +887,10 @@ def start_workers():
     threading.Thread(target=notify_worker, daemon=True).start()
 
 # ============================================================
-# HTTP SERVER - CHẠY SONG SONG VỚI BOT
+# HTTP SERVER
 # ============================================================
 
 def run_http_server():
-    """Chạy Flask trong thread riêng để Render detect port."""
     try:
         from flask import Flask, jsonify, request
     except ImportError:
@@ -756,8 +898,6 @@ def run_http_server():
         return
 
     app = Flask(__name__)
-
-    # ---------------- ROUTE CƠ BẢN ----------------
 
     @app.route("/")
     def index():
@@ -771,7 +911,6 @@ def run_http_server():
     def health():
         return jsonify({
             "ok": True,
-            "service": "key-server",
             "bot": "running" if BOT_TOKEN else "no-token",
             "uptime": now_ms() - _bot_state["started_at"],
             "updates": _bot_state["updates_handled"],
@@ -784,7 +923,7 @@ def run_http_server():
     def status_page():
         me = get_me()
         up = humanize_delta(now_ms() - _bot_state["started_at"])
-        html_page = f"""<!DOCTYPE html>
+        return f"""<!DOCTYPE html>
         <html><head><meta charset="utf-8"><title>Status</title>
         <style>
             body{{font-family:monospace;background:#0d1117;color:#c9d1d9;padding:20px}}
@@ -802,12 +941,9 @@ def run_http_server():
             <tr><td>Updates</td><td>{_bot_state['updates_handled']}</td></tr>
             <tr><td>Commands</td><td>{_bot_state['commands_handled']}</td></tr>
             <tr><td>Errors</td><td>{_bot_state['errors']}</td></tr>
-            <tr><td>Users</td><td>{len(list_telegram_users())}</td></tr>
+            <tr><td>Users</td><td>{count_telegram_users()}</td></tr>
             <tr><td>Port</td><td>{os.environ.get('PORT', '10000')}</td></tr>
         </table></body></html>"""
-        return html_page
-
-    # ---------------- WEBHOOK TELEGRAM ----------------
 
     @app.route(f"/webhook/{BOT_TOKEN}", methods=["POST"])
     def webhook():
@@ -827,8 +963,6 @@ def run_http_server():
             print(f"[HTTP] webhook lỗi: {e}")
         return "OK", 200
 
-    # ---------------- ĐĂNG KÝ WEB/API BLUEPRINT ----------------
-
     try:
         import web
         web.register(app)
@@ -843,12 +977,11 @@ def run_http_server():
     except Exception as e:
         print(f"[HTTP] api blueprint lỗi: {e}")
 
-    # ---------------- CHẠY ----------------
-
     port = int(os.environ.get("PORT", 10000))
     host = "0.0.0.0"
     print(f"[HTTP] Flask chạy trên {host}:{port}")
-    app.run(host=host, port=port, threaded=True, use_reloader=False, debug=False)
+    app.run(host=host, port=port, threaded=True,
+            use_reloader=False, debug=False)
 
 # ============================================================
 # ENTRY POINT
@@ -881,14 +1014,12 @@ def main():
     print(f"[BOT] DATA_DIR: {DATA_DIR}")
     print(f"[BOT] BOT_TOKEN: {'SET' if BOT_TOKEN else 'MISSING'}")
 
-    # Luôn mở HTTP server trước để Render detect port
     http_thread = threading.Thread(target=run_http_server,
                                     daemon=True, name="http-server")
     http_thread.start()
     print("[BOT] Đã khởi động HTTP server thread")
-    time.sleep(1)  # Cho Flask kịp bind port
+    time.sleep(1)
 
-    # Nếu không có token, chỉ chạy HTTP
     if not BOT_TOKEN:
         print("[BOT] Không có BOT_TOKEN, chỉ chạy HTTP server.")
         while True:
@@ -896,7 +1027,6 @@ def main():
 
     wait_for_token()
 
-    # Kiểm tra bot, retry thay vì thoát
     while not check_bot():
         print("[BOT] Token chưa hợp lệ. Thử lại sau 30s...")
         time.sleep(30)
