@@ -1,6 +1,7 @@
 # db.py - Kết nối SQLite, schema, helper, migration
 # Tác giả: MADE BY Bao Huy
 # Phụ thuộc: sqlite3 (built-in)
+# FIX: fetchone/fetchall trả dict thay vì sqlite3.Row
 
 import os
 import json
@@ -67,6 +68,50 @@ def parse_time(s):
 
 
 # ============================================================
+# HELPER CHUYỂN sqlite3.Row → dict
+# ============================================================
+
+def _row_to_dict(row):
+    """Chuyển sqlite3.Row → dict. None → None."""
+    if row is None:
+        return None
+    try:
+        # sqlite3.Row hỗ trợ .keys() và __getitem__ theo tên cột
+        return {k: row[k] for k in row.keys()}
+    except Exception:
+        pass
+    try:
+        return dict(row)
+    except Exception:
+        return None
+
+
+def _rows_to_dicts(rows):
+    """Chuyển list[sqlite3.Row] → list[dict]."""
+    if not rows:
+        return []
+    result = []
+    for r in rows:
+        d = _row_to_dict(r)
+        if d is not None:
+            result.append(d)
+    return result
+
+
+def _row_get_value(row, default=None):
+    """Lấy giá trị cột đầu tiên từ Row hoặc dict."""
+    if row is None:
+        return default
+    try:
+        if isinstance(row, dict):
+            return next(iter(row.values())) if row else default
+        # sqlite3.Row
+        return row[0]
+    except Exception:
+        return default
+
+
+# ============================================================
 # KẾT NỐI
 # ============================================================
 
@@ -115,7 +160,7 @@ def close_db():
 
 
 # ============================================================
-# TRUY VẤN
+# TRUY VẤN — TẤT CẢ TRẢ VỀ DICT
 # ============================================================
 
 def execute(query, params=()):
@@ -142,25 +187,24 @@ def executescript(script):
 
 
 def fetchone(query, params=()):
-    """Trả một dòng hoặc None."""
+    """Trả một dòng dạng dict hoặc None."""
     db = get_db()
     cur = db.execute(query, params)
-    return cur.fetchone()
+    return _row_to_dict(cur.fetchone())
 
 
 def fetchall(query, params=()):
-    """Trả danh sách dòng."""
+    """Trả danh sách dòng dạng dict."""
     db = get_db()
     cur = db.execute(query, params)
-    return cur.fetchall()
+    return _rows_to_dicts(cur.fetchall())
 
 
 def fetchvalue(query, params=(), default=None):
     """Trả giá trị cột đầu tiên của dòng đầu tiên."""
-    row = fetchone(query, params)
-    if not row:
-        return default
-    return row[0]
+    db = get_db()
+    cur = db.execute(query, params)
+    return _row_get_value(cur.fetchone(), default)
 
 
 def insert(table, data):
@@ -233,15 +277,24 @@ def upsert(table, data, conflict_cols, update_cols=None):
 
 
 def row_to_dict(row):
+    """Public helper: Row hoặc dict → dict."""
     if row is None:
         return None
-    return dict(row)
+    if isinstance(row, dict):
+        return row
+    return _row_to_dict(row)
 
 
 def rows_to_list(rows):
+    """Public helper: list[Row] → list[dict]."""
     if not rows:
         return []
-    return [dict(r) for r in rows]
+    result = []
+    for r in rows:
+        d = row_to_dict(r)
+        if d is not None:
+            result.append(d)
+    return result
 
 
 def count(table, where="", params=()):
@@ -597,6 +650,24 @@ def backup_to(path):
     except Exception as e:
         print(f"[DB] Backup lỗi: {e}")
         return False
+
+
+# ============================================================
+# TƯƠNG THÍCH NGƯỢC — WRAPPER CHO AI CÒN DÙNG sqlite3.Row
+# ============================================================
+
+class RowWrapper(dict):
+    """Dict subclass hỗ trợ truy cập index số như Row."""
+    def __getitem__(self, key):
+        if isinstance(key, int):
+            try:
+                return list(self.values())[key]
+            except IndexError:
+                raise IndexError(f"Index {key} ngoài phạm vi")
+        return super().__getitem__(key)
+    
+    def keys(self):
+        return super().keys()
 
 
 # ============================================================
