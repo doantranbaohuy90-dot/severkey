@@ -1,6 +1,13 @@
 # ============================================================
-# FILE: web.py - NÂNG CẤP TOÀN DIỆN
-# MÔ TẢ: Flask Blueprint với bảo mật, tối ưu, UI v2, audit log
+# FILE: web.py - BẢN VÁ LỖI
+# FIX: 
+#   - Jinja2 inline-if thiếu else gây TemplateSyntaxError
+#   - before_app_request/after_app_request xung đột bot.py
+#   - fetchone trả None khi bảng chưa tồn tại
+#   - current_user() gọi khi chưa login gây lỗi
+#   - render_template_string thiếu biến
+#   - audit() ghi khi bảng logs chưa có
+#   - app_errorhandler đăng ký trùng
 # ============================================================
 
 import os
@@ -10,12 +17,13 @@ import html
 import secrets
 import hashlib
 import threading
+import traceback
 from functools import wraps
 from datetime import datetime
 
 from flask import (
     Blueprint, request, jsonify, render_template_string,
-    make_response, redirect, url_for, abort, g, current_app,
+    make_response, redirect, url_for, abort, g,
 )
 
 # ---------------- IMPORT MODULE NỘI BỘ (AN TOÀN) ----------------
@@ -67,11 +75,12 @@ CSRF_ENABLED = os.environ.get("CSRF_ENABLED", "true").lower() == "true"
 SECURE_COOKIES = os.environ.get("SECURE_COOKIES", "true").lower() == "true"
 RATE_LIMIT_LOGIN = int(os.environ.get("RATE_LIMIT_LOGIN", "5"))
 RATE_LIMIT_DEFAULT = int(os.environ.get("RATE_LIMIT_DEFAULT", "120"))
+DEBUG_WEB = os.environ.get("WEB_DEBUG", "false").lower() == "true"
 
 web_bp = Blueprint("web", __name__)
 
 # ============================================================
-# RATE LIMIT (IN-MEMORY)
+# RATE LIMIT
 # ============================================================
 
 _rl_store = {}
@@ -88,10 +97,13 @@ def rate_limit(key, limit=RATE_LIMIT_DEFAULT, window=60):
         return True
 
 def _client_ip():
-    fwd = request.headers.get("X-Forwarded-For", "")
-    if fwd:
-        return fwd.split(",")[0].strip()
-    return request.remote_addr or "0.0.0.0"
+    try:
+        fwd = request.headers.get("X-Forwarded-For", "")
+        if fwd:
+            return fwd.split(",")[0].strip()
+        return request.remote_addr or "0.0.0.0"
+    except Exception:
+        return "0.0.0.0"
 
 # ============================================================
 # CSRF
@@ -127,19 +139,33 @@ def check_csrf(uid, token):
     return secrets.compare_digest(expect, sig)
 
 # ============================================================
-# AUDIT LOG
+# AUDIT LOG - AN TOÀN (KHÔNG CRASH NẾU BẢNG CHƯA CÓ)
 # ============================================================
 
+_logs_table_ok = [None]
+
+def _check_logs_table():
+    if _logs_table_ok[0] is not None:
+        return _logs_table_ok[0]
+    try:
+        fetchone("SELECT 1 AS x FROM logs LIMIT 1")
+        _logs_table_ok[0] = True
+    except Exception:
+        _logs_table_ok[0] = False
+    return _logs_table_ok[0]
+
 def audit(event, data="", uid=None, ip=None):
+    if not _check_logs_table():
+        return
     try:
         execute(
             "INSERT INTO logs (time, event, data) VALUES (?, ?, ?)",
-            (now_ms(), event, f"{uid or '-'}|{ip or '-'}|{data}")[:500])
+            (now_ms(), event, f"{uid or '-'}|{ip or '-'}|{data}"[:500]))
     except Exception:
         pass
 
 # ============================================================
-# CSS V2 - DARK MODERN RESPONSIVE
+# CSS
 # ============================================================
 
 BASE_CSS = """
@@ -170,8 +196,6 @@ h2{font-size:15px;color:var(--accent);margin:0 0 10px;font-weight:600;
 h3{font-size:14px;color:var(--info);margin:0 0 6px}
 a{color:var(--accent);text-decoration:none;transition:color .15s}
 a:hover{color:var(--info);text-decoration:underline}
-
-/* NAV */
 .nav{
   display:flex;gap:6px;flex-wrap:wrap;align-items:center;
   padding:10px 12px;background:rgba(15,20,27,.95);
@@ -180,42 +204,28 @@ a:hover{color:var(--info);text-decoration:underline}
   position:sticky;top:0;z-index:50;
   backdrop-filter:blur(8px);
 }
-.nav a{
-  padding:5px 10px;border-radius:6px;background:var(--panel2);
-  color:var(--fg2);transition:all .15s;
-}
+.nav a{padding:5px 10px;border-radius:6px;background:var(--panel2);
+       color:var(--fg2);transition:all .15s}
 .nav a:hover{background:var(--border2);color:var(--fg);text-decoration:none}
 .nav a.active{background:var(--accent2);color:#fff}
 .nav .brand{color:var(--accent);font-weight:700;padding:4px 8px;background:var(--panel)}
-
-/* BOX */
-.box{
-  border:1px solid var(--border);padding:16px;margin:0 0 14px;
-  border-radius:var(--radius2);background:var(--panel);
-  box-shadow:var(--shadow);
-}
+.box{border:1px solid var(--border);padding:16px;margin:0 0 14px;
+     border-radius:var(--radius2);background:var(--panel);
+     box-shadow:var(--shadow)}
 .box.tight{padding:12px}
-
-/* GRID */
 .grid{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
 .grid-2{display:grid;gap:10px;grid-template-columns:1fr 1fr}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start}
 .row > *{flex:1;min-width:120px}
 .row.tight > *{min-width:0}
-
-/* STAT */
-.stat{
-  border:1px solid var(--border);padding:12px;border-radius:var(--radius);
-  background:var(--bg2);transition:border-color .15s;
-}
+.stat{border:1px solid var(--border);padding:12px;border-radius:var(--radius);
+      background:var(--bg2);transition:border-color .15s}
 .stat:hover{border-color:var(--border2)}
 .stat b{color:var(--accent);font-size:22px;display:block;margin-top:4px;font-weight:700}
 .stat.ok b{color:var(--ok)}
 .stat.warn b{color:var(--warn)}
 .stat.err b{color:var(--err)}
 .stat .lbl{color:var(--fg2);font-size:11px;text-transform:uppercase;letter-spacing:.5px}
-
-/* FORM */
 input,button,select,textarea{
   background:var(--bg2);color:var(--fg);
   border:1px solid var(--border2);
@@ -228,11 +238,8 @@ input:focus,textarea:focus,select:focus{
   box-shadow:0 0 0 3px rgba(31,111,235,.2);
 }
 input::placeholder{color:var(--fg3)}
-button{
-  background:var(--accent2);color:#fff;font-weight:600;
-  cursor:pointer;border:none;padding:10px 14px;
-  letter-spacing:.3px;
-}
+button{background:var(--accent2);color:#fff;font-weight:600;
+       cursor:pointer;border:none;padding:10px 14px;letter-spacing:.3px}
 button:hover{background:#388bfd}
 button:active{transform:translateY(1px)}
 button.danger{background:#b62324}
@@ -242,8 +249,6 @@ button.neutral:hover{background:var(--border2)}
 button.ghost{background:transparent;border:1px solid var(--border2);color:var(--fg2)}
 button.ghost:hover{border-color:var(--accent);color:var(--accent)}
 button.small{padding:6px 10px;font-size:12px;width:auto}
-
-/* TABLE */
 table{width:100%;border-collapse:collapse;font-size:12px;margin-top:6px}
 th,td{border-bottom:1px solid var(--border);padding:9px 8px;
       text-align:left;vertical-align:top;word-break:break-all}
@@ -252,8 +257,6 @@ th{background:var(--bg2);color:var(--accent);font-weight:600;
 tr:hover td{background:rgba(88,166,255,.04)}
 td code{background:var(--bg2);padding:2px 6px;border-radius:4px;
         color:var(--ok);font-size:11px}
-
-/* TAG */
 .tag{display:inline-block;padding:2px 8px;border-radius:20px;
      font-size:11px;font-weight:600;background:var(--panel2);color:var(--fg2)}
 .tag.admin{background:rgba(240,136,62,.15);color:var(--orange);border:1px solid rgba(240,136,62,.3)}
@@ -262,19 +265,12 @@ td code{background:var(--bg2);padding:2px 6px;border-radius:4px;
 .tag.viewer{background:var(--panel2);color:var(--fg2)}
 .tag.on{background:rgba(63,185,80,.15);color:var(--ok)}
 .tag.off{background:rgba(248,81,73,.15);color:var(--err)}
-
 .on{color:var(--ok)} .off{color:var(--err)} .blk{color:var(--warn)}
 .user{color:var(--purple)} .ctv{color:var(--orange)}
 .key{color:var(--ok);word-break:break-all;font-size:12px}
-
-/* TREE */
-.tree{
-  font-size:12px;line-height:1.6;white-space:pre;overflow-x:auto;
-  padding:12px;background:#010409;border:1px solid var(--border);
-  border-radius:var(--radius);color:var(--ok);
-}
-
-/* ALERT */
+.tree{font-size:12px;line-height:1.6;white-space:pre;overflow-x:auto;
+      padding:12px;background:#010409;border:1px solid var(--border);
+      border-radius:var(--radius);color:var(--ok)}
 .err{color:var(--err);font-size:12px;min-height:14px;margin-top:6px}
 .ok{color:var(--ok);font-size:12px;margin-top:6px}
 .alert{padding:10px 12px;border-radius:var(--radius);font-size:12px;
@@ -283,38 +279,27 @@ td code{background:var(--bg2);padding:2px 6px;border-radius:4px;
 .alert.ok{background:rgba(63,185,80,.08);color:var(--ok);border-color:var(--ok)}
 .alert.warn{background:rgba(210,153,34,.08);color:var(--warn);border-color:var(--warn)}
 .alert.info{background:rgba(121,192,255,.08);color:var(--info);border-color:var(--info)}
-
 .scroll{max-height:520px;overflow-y:auto;border-radius:var(--radius)}
 .empty{color:var(--fg2);font-style:italic;padding:14px;text-align:center}
-
-/* PAGINATION */
 .pager{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;align-items:center}
 .pager a{padding:5px 10px;border-radius:6px;background:var(--panel2);
          color:var(--fg2);font-size:12px}
 .pager a:hover{background:var(--border2);color:var(--fg)}
 .pager a.active{background:var(--accent2);color:#fff}
 .pager .info{color:var(--fg3);font-size:11px;margin-left:auto}
-
-/* TOAST */
-.toast{
-  position:fixed;bottom:20px;right:20px;z-index:100;
-  background:var(--panel);border:1px solid var(--border2);
-  padding:12px 16px;border-radius:var(--radius);
-  box-shadow:var(--shadow);max-width:340px;
-  animation:slideIn .3s ease-out;
-}
+.toast{position:fixed;bottom:20px;right:20px;z-index:100;
+       background:var(--panel);border:1px solid var(--border2);
+       padding:12px 16px;border-radius:var(--radius);
+       box-shadow:var(--shadow);max-width:340px;
+       animation:slideIn .3s ease-out}
 .toast.ok{border-left:3px solid var(--ok)}
 .toast.err{border-left:3px solid var(--err)}
 @keyframes slideIn{from{transform:translateX(120%)}to{transform:translateX(0)}}
-
-/* WRAP */
 .wrap{max-width:440px;margin:60px auto;padding:0 12px}
 .center{text-align:center}
 .muted{color:var(--fg2);font-size:12px}
 .tiny{font-size:11px;color:var(--fg3)}
 .mt{margin-top:12px}.mb{margin-bottom:12px}
-
-/* RESPONSIVE */
 @media(max-width:640px){
   body{padding:8px}
   .nav{padding:8px;font-size:12px}
@@ -335,18 +320,30 @@ td code{background:var(--bg2);padding:2px 6px;border-radius:4px;
 
 def _esc(t):
     if t is None: return ""
-    return html.escape(str(t), quote=False)
+    try:
+        return html.escape(str(t), quote=False)
+    except Exception:
+        return ""
 
 def _toast(msg, kind="ok"):
     if not msg: return ""
     return f'<div class="toast {kind}">{_esc(msg)}</div>'
+
+def _safe_get(d, key, default=""):
+    if d is None: return default
+    try:
+        if hasattr(d, "get"):
+            return d.get(key, default)
+        return d[key]
+    except Exception:
+        return default
 
 # ============================================================
 # LAYOUT
 # ============================================================
 
 def nav_html(me, active=""):
-    if me and me.get("role") == "admin":
+    if me and _safe_get(me, "role") == "admin":
         items = [
             ("/", "Dashboard", "dashboard"),
             ("/keys", "Keys", "keys"),
@@ -372,8 +369,9 @@ def nav_html(me, active=""):
         cls = 'navlink active' if name == active else 'navlink'
         links += f'<a class="{cls}" href="{url}">{label}</a>'
     if me:
-        role_cls = me.get("role", "user")
-        me_tag = (f'<span class="tag {role_cls}">{_esc(me["username"])}</span>'
+        role_cls = _safe_get(me, "role", "user")
+        username = _safe_get(me, "username", "?")
+        me_tag = (f'<span class="tag {role_cls}">{_esc(username)}</span>'
                   f'<a href="/logout">Thoát</a>')
     else:
         me_tag = '<a href="/login">Đăng nhập</a>'
@@ -381,6 +379,10 @@ def nav_html(me, active=""):
             f'{links}<span style="flex:1"></span>{me_tag}</div>')
 
 def page(title, me, body, active=""):
+    try:
+        nav = nav_html(me, active)
+    except Exception:
+        nav = ""
     return (f'<!DOCTYPE html><html lang="vi"><head>'
             f'<meta charset="utf-8">'
             f'<meta name="viewport" content="width=device-width, initial-scale=1">'
@@ -388,30 +390,31 @@ def page(title, me, body, active=""):
             f'<meta name="theme-color" content="#0a0e14">'
             f'<title>{_esc(title)} · KEY SERVER</title>'
             f'{BASE_CSS}</head><body>'
-            f'{nav_html(me, active)}{body}</body></html>')
+            f'{nav}{body}</body></html>')
 
 # ============================================================
-# AUTH
+# AUTH - AN TOÀN
 # ============================================================
 
 def current_user():
     if not authmod:
         return None
-    token = request.cookies.get("session")
-    if not token:
-        return None
     try:
+        token = request.cookies.get("session")
+        if not token:
+            return None
         s = authmod.get_session(token)
         if not s:
             return None
-        rec = authmod.load_accounts().get(s["uid"])
+        uid = s.get("uid") if hasattr(s, "get") else s["uid"]
+        rec = authmod.load_accounts().get(uid)
         if not rec or not rec.get("active", True):
             return None
         return {
-            "uid": s["uid"],
-            "username": rec["username"],
+            "uid": uid,
+            "username": rec.get("username", "?"),
             "role": rec.get("role", "user"),
-            "csrf": make_csrf(s["uid"]),
+            "csrf": make_csrf(uid),
         }
     except Exception:
         return None
@@ -422,14 +425,20 @@ def require_login(perm=None):
         def wrapper(*args, **kwargs):
             me = current_user()
             if not me:
-                return redirect(url_for("web.login",
-                                        next=request.path))
+                return redirect(url_for("web.login", next=request.path))
             if perm and authmod:
                 try:
                     if not authmod.has_permission(me["role"], perm):
-                        abort(403)
+                        return page("403", me,
+                            '<div class="wrap"><div class="box center">'
+                            '<h1>403</h1><p class="muted">Không có quyền.</p>'
+                            '<div class="mt"><a href="/"><button class="neutral">← Dashboard</button></a></div>'
+                            '</div></div>'), 403
                 except Exception:
-                    abort(403)
+                    return page("403", me,
+                        '<div class="wrap"><div class="box center">'
+                        '<h1>403</h1><p class="muted">Lỗi phân quyền.</p>'
+                        '</div></div>'), 403
             g.me = me
             return f(*args, **kwargs)
         return wrapper
@@ -444,13 +453,19 @@ def verify_csrf():
     return check_csrf(me["uid"], request.form.get("csrf", ""))
 
 def csrf_field(me):
-    return f'<input type="hidden" name="csrf" value="{me["csrf"]}">'
+    if not me: return ""
+    return f'<input type="hidden" name="csrf" value="{_esc(me.get("csrf",""))}">'
 
 # ============================================================
-# STATS
+# STATS - AN TOÀN
 # ============================================================
 
 def compute_stats():
+    empty = {
+        "totalKeys": 0, "activeKeys": 0, "expiredKeys": 0,
+        "totalDevices": 0, "totalUsers": 0, "totalCtv": 0,
+        "blockedKeys": 0, "blockedDevices": 0,
+    }
     try:
         row = fetchone("""
             SELECT
@@ -463,12 +478,35 @@ def compute_stats():
               (SELECT COUNT(*) FROM blocked WHERE type='key') AS blockedKeys,
               (SELECT COUNT(*) FROM blocked WHERE type='device') AS blockedDevices
         """, (now_ms(),))
-        return dict(row) if row else {}
+        if row:
+            return dict(row)
+        return empty
     except Exception:
-        return {}
+        # Fallback từng phần
+        try:
+            r = {}
+            for name, sql in [
+                ("totalKeys", "SELECT COUNT(*) AS c FROM keys"),
+                ("activeKeys", "SELECT COUNT(*) AS c FROM keys WHERE active=1"),
+                ("expiredKeys", "SELECT COUNT(*) AS c FROM keys WHERE expires_at < ?"),
+                ("totalDevices", "SELECT COUNT(*) AS c FROM devices"),
+                ("totalUsers", "SELECT COUNT(*) AS c FROM accounts"),
+            ]:
+                try:
+                    params = (now_ms(),) if "expires_at" in sql else ()
+                    row = fetchone(sql, params)
+                    r[name] = row["c"] if row else 0
+                except Exception:
+                    r[name] = 0
+            for k in empty:
+                r.setdefault(k, 0)
+            return r
+        except Exception:
+            return empty
 
 # ============================================================
-# TEMPLATES
+# TEMPLATES - ĐÃ SỬA JINJA2 SYNTAX
+# Dùng {% if %}...{% else %}...{% endif %} thay vì inline-if
 # ============================================================
 
 LOGIN_PAGE = """<!DOCTYPE html><html lang="vi"><head><meta charset="utf-8">
@@ -479,7 +517,7 @@ LOGIN_PAGE = """<!DOCTYPE html><html lang="vi"><head><meta charset="utf-8">
   <h1>🔑 ĐĂNG NHẬP</h1>
   <p class="muted mb">Nhập thông tin tài khoản để tiếp tục.</p>
   <form method="POST" action="/login">
-    <input name="username" placeholder="tài khoản" value="{{ prefill or '' }}" required autocomplete="username">
+    <input name="username" placeholder="tài khoản" value="{{ prefill }}" required autocomplete="username">
     <input name="password" type="password" placeholder="mật khẩu" required autocomplete="current-password">
     {% if error %}<div class="alert err">{{ error }}</div>{% endif %}
     <button type="submit" class="mt">Đăng nhập</button>
@@ -507,14 +545,14 @@ REGISTER_PAGE = """<!DOCTYPE html><html lang="vi"><head><meta charset="utf-8">
 DASHBOARD_BODY = """
 <h1>📊 DASHBOARD</h1>
 <div class="grid">
-  <div class="stat"><span class="lbl">Tổng key</span><b>{{ s.get('totalKeys',0) }}</b></div>
-  <div class="stat ok"><span class="lbl">Hoạt động</span><b>{{ s.get('activeKeys',0) }}</b></div>
-  <div class="stat err"><span class="lbl">Hết hạn</span><b>{{ s.get('expiredKeys',0) }}</b></div>
-  <div class="stat"><span class="lbl">Thiết bị</span><b>{{ s.get('totalDevices',0) }}</b></div>
-  <div class="stat"><span class="lbl">Tài khoản</span><b>{{ s.get('totalUsers',0) }}</b></div>
-  <div class="stat warn"><span class="lbl">CTV</span><b>{{ s.get('totalCtv',0) }}</b></div>
-  <div class="stat warn"><span class="lbl">Block key</span><b>{{ s.get('blockedKeys',0) }}</b></div>
-  <div class="stat warn"><span class="lbl">Block TB</span><b>{{ s.get('blockedDevices',0) }}</b></div>
+  <div class="stat"><span class="lbl">Tổng key</span><b>{{ s.totalKeys }}</b></div>
+  <div class="stat ok"><span class="lbl">Hoạt động</span><b>{{ s.activeKeys }}</b></div>
+  <div class="stat err"><span class="lbl">Hết hạn</span><b>{{ s.expiredKeys }}</b></div>
+  <div class="stat"><span class="lbl">Thiết bị</span><b>{{ s.totalDevices }}</b></div>
+  <div class="stat"><span class="lbl">Tài khoản</span><b>{{ s.totalUsers }}</b></div>
+  <div class="stat warn"><span class="lbl">CTV</span><b>{{ s.totalCtv }}</b></div>
+  <div class="stat warn"><span class="lbl">Block key</span><b>{{ s.blockedKeys }}</b></div>
+  <div class="stat warn"><span class="lbl">Block TB</span><b>{{ s.blockedDevices }}</b></div>
 </div>
 
 <div class="grid-2">
@@ -568,10 +606,10 @@ KEYS_BODY = """
   <form method="GET" action="/keys" class="row tight mb">
     <input name="q" value="{{ q }}" placeholder="Tìm key hoặc chủ...">
     <select name="status">
-      <option value="all" {{ 'selected' if status=='all' }}>Tất cả</option>
-      <option value="active" {{ 'selected' if status=='active' }}>Hoạt động</option>
-      <option value="expired" {{ 'selected' if status=='expired' }}>Hết hạn</option>
-      <option value="inactive" {{ 'selected' if status=='inactive' }}>Đã tắt</option>
+      <option value="all"{% if status == 'all' %} selected{% endif %}>Tất cả</option>
+      <option value="active"{% if status == 'active' %} selected{% endif %}>Hoạt động</option>
+      <option value="expired"{% if status == 'expired' %} selected{% endif %}>Hết hạn</option>
+      <option value="inactive"{% if status == 'inactive' %} selected{% endif %}>Đã tắt</option>
     </select>
     <button type="submit" class="small neutral">🔍 Lọc</button>
   </form>
@@ -579,9 +617,9 @@ KEYS_BODY = """
   <tr><th>Key</th><th>Chủ</th><th>Trạng thái</th><th>TB</th><th>Còn</th><th>Hết hạn</th><th>Hành động</th></tr>
   {% for k in keys %}
   <tr>
-    <td><code class="key">{{ k.key[:24] }}{% if k.key|length > 24 %}…{% endif %}</code></td>
+    <td><code class="key">{{ k.key_short }}</code></td>
     <td>{{ k.owner }}</td>
-    <td><span class="tag {{ 'on' if k.active else 'off' }}">{{ 'ON' if k.active else 'OFF' }}</span></td>
+    <td>{% if k.active %}<span class="tag on">ON</span>{% else %}<span class="tag off">OFF</span>{% endif %}</td>
     <td>{{ k.devicesUsed }}/{{ k.maxDevices }}</td>
     <td>{{ k.daysLeft }}d</td>
     <td class="tiny">{{ k.expiresAtText }}</td>
@@ -612,8 +650,7 @@ KEYS_BODY = """
   {% if total_pages > 1 %}
   <div class="pager">
     {% for p in page_range %}
-      <a href="?q={{ q }}&status={{ status }}&page={{ p }}"
-         class="{{ 'active' if p==page else '' }}">{{ p }}</a>
+      <a href="?q={{ q }}&status={{ status }}&page={{ p }}"{% if p == page %} class="active"{% endif %}>{{ p }}</a>
     {% endfor %}
     <span class="info">Trang {{ page }}/{{ total_pages }} · {{ total }} key</span>
   </div>
@@ -624,7 +661,7 @@ KEYS_BODY = """
 TREE_BODY = """
 <h1>🌳 CÂY KEY</h1>
 <div class="box">
-  <div class="tree">{{ tree_text or 'Chưa có key nào.' }}</div>
+  <div class="tree">{{ tree_text }}</div>
 </div>
 """
 
@@ -635,7 +672,7 @@ DEVICES_BODY = """
   {% for d in devices %}
   <tr>
     <td class="tiny">{{ d.device_id }}</td>
-    <td><code class="key">{{ d.key[:20] }}{% if d.key|length > 20 %}…{% endif %}</code></td>
+    <td><code class="key">{{ d.key_short }}</code></td>
     <td class="tiny">{{ d.ip }}</td>
     <td class="tiny">{{ d.lastSeenText }}</td>
     <td>{{ d.count }}</td>
@@ -654,7 +691,7 @@ BLOCKS_BODY = """
   <tr>
     <td><span class="tag off">{{ b.type }}</span></td>
     <td class="tiny">{{ b.id }}</td>
-    <td><code class="key">{{ (b.key or '-')[:20] }}</code></td>
+    <td><code class="key">{{ b.key_short }}</code></td>
     <td>{{ b.reason }}</td>
     <td class="tiny">{{ b.timeText }}</td>
   </tr>
@@ -683,14 +720,14 @@ CTV_BODY = """
   <tr>
     <td class="ctv">{{ c.user_id }}</td>
     <td>{{ c.name }}</td>
-    <td><span class="tag {{ 'on' if c.active else 'off' }}">{{ 'ON' if c.active else 'OFF' }}</span></td>
+    <td>{% if c.active %}<span class="tag on">ON</span>{% else %}<span class="tag off">OFF</span>{% endif %}</td>
     <td>{{ c.keys_created }}</td>
     <td>{{ c.max_keys }}</td>
     <td>
       <form method="POST" action="/web/toggle_ctv" style="display:inline">
         <input type="hidden" name="csrf" value="{{ me.csrf }}">
         <input type="hidden" name="user_id" value="{{ c.user_id }}">
-        <button type="submit" class="neutral small">{{ 'Tắt' if c.active else 'Bật' }}</button>
+        <button type="submit" class="neutral small">{% if c.active %}Tắt{% else %}Bật{% endif %}</button>
       </form>
       <form method="POST" action="/web/removectv" style="display:inline"
             onsubmit="return confirm('Xóa CTV này?')">
@@ -730,13 +767,13 @@ ACCOUNTS_BODY = """
   <tr>
     <td class="user">{{ a.username }}</td>
     <td><span class="tag {{ a.role }}">{{ a.role }}</span></td>
-    <td><span class="tag {{ 'on' if a.active else 'off' }}">{{ 'ON' if a.active else 'OFF' }}</span></td>
-    <td><code class="key">{{ (a.key or '-')[:20] }}</code></td>
+    <td>{% if a.active %}<span class="tag on">ON</span>{% else %}<span class="tag off">OFF</span>{% endif %}</td>
+    <td><code class="key">{{ a.key_short }}</code></td>
     <td>
       <form method="POST" action="/accounts/toggle" style="display:inline">
         <input type="hidden" name="csrf" value="{{ me.csrf }}">
         <input type="hidden" name="username" value="{{ a.username }}">
-        <button type="submit" class="neutral small">{{ 'Tắt' if a.active else 'Bật' }}</button>
+        <button type="submit" class="neutral small">{% if a.active %}Tắt{% else %}Bật{% endif %}</button>
       </form>
       <form method="POST" action="/accounts/remove" style="display:inline"
             onsubmit="return confirm('Xóa tài khoản này?')">
@@ -748,6 +785,7 @@ ACCOUNTS_BODY = """
   </tr>
   {% endfor %}
 </table></div>
+</div>
 """
 
 LOGS_BODY = """
@@ -780,7 +818,8 @@ MY_PANEL_BODY = """
     <div class="tree">{{ kr.key }}</div>
     <div class="grid mt">
       <div class="stat"><span class="lbl">Chủ</span><b style="font-size:14px">{{ kr.owner }}</b></div>
-      <div class="stat {{ 'ok' if kr.daysLeft > 7 else 'warn' }}"><span class="lbl">Còn lại</span><b>{{ kr.daysLeft }} ngày</b></div>
+      <div class="stat{% if kr.daysLeft > 7 %} ok{% elif kr.daysLeft > 0 %} warn{% else %} err{% endif %}">
+        <span class="lbl">Còn lại</span><b>{{ kr.daysLeft }} ngày</b></div>
       <div class="stat"><span class="lbl">Thiết bị</span><b>{{ kr.devicesUsed }}/{{ kr.maxDevices }}</b></div>
       <div class="stat"><span class="lbl">Hết hạn</span><b style="font-size:12px">{{ kr.expiresAtText }}</b></div>
     </div>
@@ -818,7 +857,7 @@ MY_PANEL_BODY = """
     {% endif %}
   </div>
 </div>
-{{ toast|safe }}
+{{ toast }}
 """
 
 API_MANAGER_BODY = """
@@ -842,7 +881,7 @@ API_MANAGER_BODY = """
     <td class="tiny">{{ k.scopesText }}</td>
     <td>{{ k.rateLimit }}</td>
     <td>{{ k.usageCount }}</td>
-    <td><span class="tag {{ 'on' if k.active else 'off' }}">{{ 'ON' if k.active else 'OFF' }}</span></td>
+    <td>{% if k.active %}<span class="tag on">ON</span>{% else %}<span class="tag off">OFF</span>{% endif %}</td>
     <td>
       <form method="POST" action="/api/toggle" style="display:inline">
         <input type="hidden" name="csrf" value="{{ me.csrf }}">
@@ -864,57 +903,116 @@ API_MANAGER_BODY = """
 """
 
 # ============================================================
-# ERROR HANDLERS
+# ERROR HANDLERS - DÙNG try/except ĐỂ TRÁNH ĐỆ QUY
 # ============================================================
 
 @web_bp.app_errorhandler(403)
 def _403(e):
-    me = current_user()
-    body = """
-    <div class="wrap"><div class="box center">
-    <h1>403</h1><p class="muted">Không có quyền truy cập.</p>
-    <div class="mt"><a href="/"><button class="neutral">← Về Dashboard</button></a></div>
-    </div></div>"""
+    try:
+        me = current_user()
+    except Exception:
+        me = None
+    body = ('<div class="wrap"><div class="box center">'
+            '<h1>403</h1><p class="muted">Không có quyền truy cập.</p>'
+            '<div class="mt"><a href="/"><button class="neutral">← Dashboard</button></a></div>'
+            '</div></div>')
     return page("403", me, body), 403
 
 @web_bp.app_errorhandler(404)
 def _404(e):
-    me = current_user()
-    body = """
-    <div class="wrap"><div class="box center">
-    <h1>404</h1><p class="muted">Không tìm thấy trang.</p>
-    <div class="mt"><a href="/"><button class="neutral">← Về Dashboard</button></a></div>
-    </div></div>"""
+    try:
+        me = current_user()
+    except Exception:
+        me = None
+    body = ('<div class="wrap"><div class="box center">'
+            '<h1>404</h1><p class="muted">Không tìm thấy trang.</p>'
+            '<div class="mt"><a href="/"><button class="neutral">← Dashboard</button></a></div>'
+            '</div></div>')
     return page("404", me, body), 404
 
 @web_bp.app_errorhandler(429)
 def _429(e):
     return jsonify({"ok": False, "error": "rate_limited"}), 429
 
+@web_bp.app_errorhandler(500)
+def _500(e):
+    try:
+        tb = traceback.format_exc()
+    except Exception:
+        tb = "(không có traceback)"
+    try:
+        me = current_user()
+    except Exception:
+        me = None
+    tb_html = _esc(tb) if DEBUG_WEB else ""
+    debug_block = f'<div class="tree mt">{tb_html}</div>' if tb_html else ""
+    body = (f'<div class="wrap"><div class="box">'
+            f'<h1>500</h1><p class="muted">Lỗi máy chủ.</p>'
+            f'{debug_block}'
+            f'<div class="mt"><a href="/"><button class="neutral">← Dashboard</button></a></div>'
+            f'</div></div>')
+    return page("500", me, body), 500
+
 # ============================================================
-# BEFORE / AFTER REQUEST
+# HOOKS - CHỈ DÙNG CHO BLUEPRINT, KHÔNG XUNG ĐỘT VỚI APP KHÁC
 # ============================================================
 
-@web_bp.before_app_request
+@web_bp.before_request
 def _rl_global():
-    ip = _client_ip()
-    path = request.path
-    if path.startswith(("/api/verify", "/api/info", "/api/health",
-                        "/api/", "/static")):
-        return None
-    if path in ("/login", "/register"):
-        return None
-    if not rate_limit(f"ip:{ip}", limit=RATE_LIMIT_DEFAULT, window=60):
-        return jsonify({"ok": False, "error": "rate_limited"}), 429
+    """Rate limit cho các route của blueprint web."""
+    try:
+        ip = _client_ip()
+        path = request.path
+        if path.startswith(("/api/verify", "/api/info", "/api/health",
+                            "/api/", "/static")):
+            return None
+        if path in ("/login", "/register"):
+            return None
+        if not rate_limit(f"ip:{ip}", limit=RATE_LIMIT_DEFAULT, window=60):
+            return jsonify({"ok": False, "error": "rate_limited"}), 429
+    except Exception:
+        pass
     return None
 
-@web_bp.after_app_request
+@web_bp.after_request
 def _sec_headers(resp):
-    resp.headers["X-Content-Type-Options"] = "nosniff"
-    resp.headers["X-Frame-Options"] = "DENY"
-    resp.headers["Referrer-Policy"] = "no-referrer"
-    resp.headers["Permissions-Policy"] = "geolocation=(), microphone=()"
+    try:
+        resp.headers["X-Content-Type-Options"] = "nosniff"
+        resp.headers["X-Frame-Options"] = "DENY"
+        resp.headers["Referrer-Policy"] = "no-referrer"
+        resp.headers["Permissions-Policy"] = "geolocation=(), microphone=()"
+    except Exception:
+        pass
     return resp
+
+# ============================================================
+# HELPERS: CHUẨN HÓA DỮ LIỆU ĐỂ TRÁNH LỖI JINJA
+# ============================================================
+
+def _short(s, n=20):
+    if not s: return ""
+    s = str(s)
+    return s[:n] + "…" if len(s) > n else s
+
+def _row_to_key_item(r, device_counts, now):
+    try:
+        days_left = max(0, int((r["expires_at"] - now) / 86400000))
+    except Exception:
+        days_left = 0
+    try:
+        key_val = r["key"] or ""
+    except Exception:
+        key_val = ""
+    return {
+        "key": key_val,
+        "key_short": _short(key_val, 24),
+        "owner": _safe_get(r, "owner", "-"),
+        "active": bool(_safe_get(r, "active", 0)),
+        "devicesUsed": device_counts.get(key_val, 0),
+        "maxDevices": _safe_get(r, "max_devices", 1),
+        "daysLeft": days_left,
+        "expiresAtText": fmt_time(_safe_get(r, "expires_at", 0)),
+    }
 
 # ============================================================
 # ROUTES: AUTH
@@ -924,68 +1022,83 @@ def _sec_headers(resp):
 def login():
     error = ""
     if not authmod:
-        return "Module auth.py không có.", 500
+        return ("Module auth.py không có.", 500)
     if request.method == "POST":
-        if not rate_limit(f"login:{_client_ip()}", RATE_LIMIT_LOGIN, 60):
-            error = "Quá nhiều lần thử. Vui lòng chờ."
-        else:
-            u = request.form.get("username", "").strip()
-            p = request.form.get("password", "")
-            uid = None
-            try:
-                uid, _ = authmod.authenticate_account(u, p)
-            except Exception:
-                uid = None
-            if not uid:
-                error = "Sai tài khoản hoặc mật khẩu."
-                audit("login_fail", u, ip=_client_ip())
+        try:
+            if not rate_limit(f"login:{_client_ip()}", RATE_LIMIT_LOGIN, 60):
+                error = "Quá nhiều lần thử. Vui lòng chờ."
             else:
-                token = authmod.create_session(uid)
-                nxt = request.args.get("next") or "/"
-                if not nxt.startswith("/"):
-                    nxt = "/"
-                resp = make_response(redirect(nxt))
-                resp.set_cookie("session", token, httponly=True,
-                                samesite="Lax", secure=SECURE_COOKIES,
-                                max_age=604800)
-                audit("login_ok", u, uid=uid, ip=_client_ip())
-                return resp
-    return render_template_string(LOGIN_PAGE, error=error, prefill="")
+                u = request.form.get("username", "").strip()
+                p = request.form.get("password", "")
+                uid = None
+                try:
+                    res = authmod.authenticate_account(u, p)
+                    uid = res[0] if isinstance(res, (tuple, list)) else res
+                except Exception:
+                    uid = None
+                if not uid:
+                    error = "Sai tài khoản hoặc mật khẩu."
+                    audit("login_fail", u, ip=_client_ip())
+                else:
+                    token = authmod.create_session(uid)
+                    nxt = request.args.get("next") or "/"
+                    if not nxt.startswith("/"):
+                        nxt = "/"
+                    resp = make_response(redirect(nxt))
+                    resp.set_cookie("session", token, httponly=True,
+                                    samesite="Lax", secure=SECURE_COOKIES,
+                                    max_age=604800)
+                    audit("login_ok", u, uid=uid, ip=_client_ip())
+                    return resp
+        except Exception as e:
+            error = f"Lỗi đăng nhập: {e}" if DEBUG_WEB else "Lỗi đăng nhập."
+    try:
+        return render_template_string(LOGIN_PAGE, error=error, prefill="")
+    except Exception as e:
+        return f"Template error: {e}", 500
 
 @web_bp.route("/register", methods=["GET", "POST"])
 def register():
     error = ""
     if not authmod:
-        return "Module auth.py không có.", 500
+        return ("Module auth.py không có.", 500)
     if request.method == "POST":
-        if not rate_limit(f"reg:{_client_ip()}", 3, 300):
-            error = "Quá nhiều yêu cầu đăng ký."
-        else:
-            u = request.form.get("username", "").strip()
-            p = request.form.get("password", "")
-            p2 = request.form.get("password2", "")
-            if len(u) < 3 or not u.replace("_", "").isalnum():
-                error = "Tài khoản ≥3 ký tự, chỉ chữ/số/gạch dưới."
-            elif len(p) < 6:
-                error = "Mật khẩu phải từ 6 ký tự."
-            elif p != p2:
-                error = "Mật khẩu nhập lại không khớp."
+        try:
+            if not rate_limit(f"reg:{_client_ip()}", 3, 300):
+                error = "Quá nhiều yêu cầu đăng ký."
             else:
-                try:
-                    ok, result = authmod.register_account(u, p)
-                except Exception as e:
-                    ok, result = False, str(e)
-                if not ok:
-                    error = f"Lỗi: {result}"
+                u = request.form.get("username", "").strip()
+                p = request.form.get("password", "")
+                p2 = request.form.get("password2", "")
+                if len(u) < 3 or not u.replace("_", "").isalnum():
+                    error = "Tài khoản ≥3 ký tự, chỉ chữ/số/gạch dưới."
+                elif len(p) < 6:
+                    error = "Mật khẩu phải từ 6 ký tự."
+                elif p != p2:
+                    error = "Mật khẩu nhập lại không khớp."
                 else:
-                    token = authmod.create_session(result)
-                    resp = make_response(redirect(url_for("web.my_panel")))
-                    resp.set_cookie("session", token, httponly=True,
-                                    samesite="Lax", secure=SECURE_COOKIES,
-                                    max_age=604800)
-                    audit("register_ok", u, uid=result, ip=_client_ip())
-                    return resp
-    return render_template_string(REGISTER_PAGE, error=error)
+                    try:
+                        res = authmod.register_account(u, p)
+                        ok = res[0] if isinstance(res, (tuple, list)) else res
+                        result = res[1] if isinstance(res, (tuple, list)) and len(res) > 1 else ""
+                    except Exception as e:
+                        ok, result = False, str(e)
+                    if not ok:
+                        error = f"Lỗi: {result}"
+                    else:
+                        token = authmod.create_session(result)
+                        resp = make_response(redirect(url_for("web.my_panel")))
+                        resp.set_cookie("session", token, httponly=True,
+                                        samesite="Lax", secure=SECURE_COOKIES,
+                                        max_age=604800)
+                        audit("register_ok", u, uid=result, ip=_client_ip())
+                        return resp
+        except Exception as e:
+            error = f"Lỗi đăng ký: {e}" if DEBUG_WEB else "Lỗi đăng ký."
+    try:
+        return render_template_string(REGISTER_PAGE, error=error)
+    except Exception as e:
+        return f"Template error: {e}", 500
 
 @web_bp.route("/logout")
 def logout():
@@ -1012,9 +1125,12 @@ def index():
     if not me:
         return redirect(url_for("web.login"))
     try:
-        logs = fetchall("SELECT time, event, data FROM logs ORDER BY id DESC LIMIT 20")
-        logs = [{"time": fmt_time(r["time"]), "event": r["event"],
-                 "data": r["data"]} for r in logs]
+        if _check_logs_table():
+            logs = fetchall("SELECT time, event, data FROM logs ORDER BY id DESC LIMIT 20")
+            logs = [{"time": fmt_time(r["time"]), "event": r["event"],
+                     "data": r["data"]} for r in logs]
+        else:
+            logs = []
     except Exception:
         logs = []
     body = render_template_string(
@@ -1024,7 +1140,7 @@ def index():
     return page("Dashboard", me, body, "dashboard")
 
 # ============================================================
-# ROUTES: KEYS (với phân trang + lọc)
+# ROUTES: KEYS
 # ============================================================
 
 @web_bp.route("/keys")
@@ -1033,7 +1149,10 @@ def keys():
     me = g.me
     q = request.args.get("q", "").strip()
     status = request.args.get("status", "all")
-    page_num = max(1, int(request.args.get("page", "1") or 1))
+    try:
+        page_num = max(1, int(request.args.get("page", "1") or 1))
+    except ValueError:
+        page_num = 1
     offset = (page_num - 1) * PER_PAGE
     where, params = [], []
     if q:
@@ -1051,8 +1170,8 @@ def keys():
     items, total, total_pages = [], 0, 1
     page_range = [1]
     try:
-        total_row = fetchone(f"SELECT COUNT(*) AS c FROM keys {where_sql}",
-                             tuple(params))
+        total_row = fetchone(
+            f"SELECT COUNT(*) AS c FROM keys {where_sql}", tuple(params))
         total = total_row["c"] if total_row else 0
         total_pages = max(1, (total + PER_PAGE - 1) // PER_PAGE)
         rows = fetchall(
@@ -1060,7 +1179,6 @@ def keys():
             f"ORDER BY created_at DESC LIMIT ? OFFSET ?",
             tuple(params) + (PER_PAGE, offset))
         now = now_ms()
-        # Tránh N+1: lấy trước số device cho tất cả key trong 1 query
         device_counts = {}
         if rows:
             keys_list = [r["key"] for r in rows]
@@ -1073,24 +1191,19 @@ def keys():
                 device_counts = {r["key"]: r["c"] for r in dcr}
             except Exception:
                 pass
-        for r in rows:
-            days_left = max(0, int((r["expires_at"] - now) / 86400000))
-            items.append({
-                "key": r["key"], "owner": r["owner"],
-                "active": bool(r["active"]),
-                "devicesUsed": device_counts.get(r["key"], 0),
-                "maxDevices": r["max_devices"],
-                "daysLeft": days_left,
-                "expiresAtText": fmt_time(r["expires_at"]),
-            })
+        items = [_row_to_key_item(r, device_counts, now) for r in rows]
         if total_pages > 1:
             start = max(1, page_num - 2)
             end = min(total_pages, page_num + 2)
             page_range = list(range(start, end + 1))
-            if 1 not in page_range: page_range.insert(0, 1)
-            if total_pages not in page_range: page_range.append(total_pages)
+            if 1 not in page_range:
+                page_range.insert(0, 1)
+            if total_pages not in page_range:
+                page_range.append(total_pages)
     except Exception as e:
         print(f"[WEB] keys lỗi: {e}")
+        if DEBUG_WEB:
+            traceback.print_exc()
     body = render_template_string(
         KEYS_BODY, me=me, keys=items, q=q, status=status,
         page=page_num, total_pages=total_pages, total=total,
@@ -1109,9 +1222,11 @@ def tree():
     if keymod:
         try:
             lines = keymod.render_tree_text(keymod.build_tree_view())
-            tree_text = "\n".join(lines)
+            tree_text = "\n".join(lines) if isinstance(lines, (list, tuple)) else str(lines)
         except Exception:
-            pass
+            tree_text = ""
+    if not tree_text:
+        tree_text = "Chưa có key nào."
     body = render_template_string(TREE_BODY, me=me, tree_text=tree_text)
     return page("Cây Key", me, body, "tree")
 
@@ -1124,9 +1239,12 @@ def devices():
         rows = fetchall("SELECT * FROM devices ORDER BY last_seen DESC LIMIT 200")
         for r in rows:
             items.append({
-                "device_id": r["device_id"], "key": r["key"], "ip": r["ip"],
-                "lastSeenText": fmt_time(r["last_seen"]),
-                "count": r["count"],
+                "device_id": _safe_get(r, "device_id", "-"),
+                "key": _safe_get(r, "key", ""),
+                "key_short": _short(_safe_get(r, "key", ""), 20),
+                "ip": _safe_get(r, "ip", "-"),
+                "lastSeenText": fmt_time(_safe_get(r, "last_seen", 0)),
+                "count": _safe_get(r, "count", 0),
             })
     except Exception:
         pass
@@ -1142,8 +1260,12 @@ def blocks():
         rows = fetchall("SELECT * FROM blocked ORDER BY time DESC LIMIT 100")
         for r in rows:
             items.append({
-                "type": r["type"], "id": r["id"], "key": r["key"],
-                "reason": r["reason"], "timeText": fmt_time(r["time"]),
+                "type": _safe_get(r, "type", "-"),
+                "id": _safe_get(r, "id", "-"),
+                "key": _safe_get(r, "key", ""),
+                "key_short": _short(_safe_get(r, "key", ""), 20),
+                "reason": _safe_get(r, "reason", "-"),
+                "timeText": fmt_time(_safe_get(r, "time", 0)),
             })
     except Exception:
         pass
@@ -1159,7 +1281,14 @@ def ctv_page():
     items = []
     try:
         rows = fetchall("SELECT * FROM ctv ORDER BY added_at DESC")
-        items = [dict(r) for r in rows]
+        for r in rows:
+            items.append({
+                "user_id": _safe_get(r, "user_id", "-"),
+                "name": _safe_get(r, "name", "-"),
+                "active": bool(_safe_get(r, "active", 0)),
+                "keys_created": _safe_get(r, "keys_created", 0),
+                "max_keys": _safe_get(r, "max_keys", 0),
+            })
     except Exception:
         pass
     body = render_template_string(
@@ -1174,7 +1303,14 @@ def accounts_page():
     items = []
     try:
         rows = fetchall("SELECT * FROM accounts ORDER BY created_at DESC")
-        items = [dict(r) for r in rows]
+        for r in rows:
+            items.append({
+                "username": _safe_get(r, "username", "-"),
+                "role": _safe_get(r, "role", "user"),
+                "active": bool(_safe_get(r, "active", 0)),
+                "key": _safe_get(r, "key", ""),
+                "key_short": _short(_safe_get(r, "key", ""), 20),
+            })
     except Exception:
         pass
     body = render_template_string(
@@ -1193,9 +1329,10 @@ def logs_page():
     n = max(10, min(n, 1000))
     items = []
     try:
-        rows = fetchall("SELECT * FROM logs ORDER BY id DESC LIMIT ?", (n,))
-        items = [{"time": fmt_time(r["time"]), "event": r["event"],
-                  "data": r["data"]} for r in rows]
+        if _check_logs_table():
+            rows = fetchall("SELECT * FROM logs ORDER BY id DESC LIMIT ?", (n,))
+            items = [{"time": fmt_time(r["time"]), "event": r["event"],
+                      "data": r["data"]} for r in rows]
     except Exception:
         pass
     body = render_template_string(LOGS_BODY, me=me, logs=items, n=n)
@@ -1225,11 +1362,20 @@ def my_panel():
     kr = None
     try:
         rec = fetchone("SELECT * FROM accounts WHERE uid = ?", (me["uid"],))
-        key = rec["key"] if rec else None
+        key = _safe_get(rec, "key") if rec else None
         if key and keymod:
-            kr = keymod.get_key_info(key)
+            info = keymod.get_key_info(key)
+            if info:
+                kr = {
+                    "key": _safe_get(info, "key", key),
+                    "owner": _safe_get(info, "owner", me["username"]),
+                    "daysLeft": _safe_get(info, "daysLeft", 0),
+                    "devicesUsed": _safe_get(info, "devicesUsed", 0),
+                    "maxDevices": _safe_get(info, "maxDevices", 1),
+                    "expiresAtText": _safe_get(info, "expiresAtText", "-"),
+                }
     except Exception:
-        pass
+        kr = None
     success = request.args.get("success", "")
     error = request.args.get("error", "")
     toast = _toast(success, "ok") if success else (
@@ -1239,7 +1385,7 @@ def my_panel():
     return page("Cá nhân", me, body, "my")
 
 # ============================================================
-# ACTIONS: CREATE / ISSUE / ADDDAYS / REVOKE / DELETE
+# ACTIONS
 # ============================================================
 
 @web_bp.route("/web/create", methods=["POST"])
@@ -1254,12 +1400,16 @@ def web_create():
         days = int(request.form.get("days", 30))
         owner = request.form.get("owner", "").strip() or me["username"]
         max_dev = int(request.form.get("max_devices", 1))
-        if days < 1 or days > 3650: days = 30
-        if max_dev < 1 or max_dev > 1000: max_dev = 1
+        if days < 1 or days > 3650:
+            days = 30
+        if max_dev < 1 or max_dev > 1000:
+            max_dev = 1
         keymod.create_key(days, owner, max_dev, created_by=me["username"])
         audit("create_key", f"{owner}|{days}d|{max_dev}dev",
               uid=me["uid"], ip=_client_ip())
     except Exception as e:
+        if DEBUG_WEB:
+            traceback.print_exc()
         print(f"[WEB] create lỗi: {e}")
     return redirect(request.referrer or url_for("web.index"))
 
@@ -1296,7 +1446,7 @@ def web_adddays():
             d = int(request.form.get("days", 0))
             if d > 0 and d <= 3650:
                 keymod.add_days(k, d)
-                audit("add_days", f"{k[:16]}…|+{d}d",
+                audit("add_days", f"{_short(k,16)}|+{d}d",
                       uid=me["uid"], ip=_client_ip())
         except Exception:
             pass
@@ -1315,7 +1465,7 @@ def web_revoke():
                 keymod.revoke_key(k)
             else:
                 execute("UPDATE keys SET active = 0 WHERE key = ?", (k,))
-            audit("revoke_key", f"{k[:16]}…",
+            audit("revoke_key", _short(k, 16),
                   uid=me["uid"], ip=_client_ip())
         except Exception:
             pass
@@ -1334,15 +1484,11 @@ def web_delete():
                 keymod.delete_key(k)
             else:
                 execute("DELETE FROM keys WHERE key = ?", (k,))
-            audit("delete_key", f"{k[:16]}…",
+            audit("delete_key", _short(k, 16),
                   uid=me["uid"], ip=_client_ip())
         except Exception:
             pass
     return redirect(request.referrer or url_for("web.keys"))
-
-# ============================================================
-# ACTIONS: CTV
-# ============================================================
 
 @web_bp.route("/web/addctv", methods=["POST"])
 @require_login("ctv")
@@ -1397,10 +1543,6 @@ def web_toggle_ctv():
         pass
     return redirect(url_for("web.ctv_page"))
 
-# ============================================================
-# ACTIONS: ACCOUNTS
-# ============================================================
-
 @web_bp.route("/accounts/create", methods=["POST"])
 @require_login("admin")
 def accounts_create():
@@ -1409,15 +1551,22 @@ def accounts_create():
         return redirect(url_for("web.accounts_page"))
     u = request.form.get("username", "").strip()
     p = request.form.get("password", "")
+    err = ""
     try:
-        ok, err = authmod.register_account(u, p)
+        res = authmod.register_account(u, p)
+        ok = res[0] if isinstance(res, (tuple, list)) else res
         if ok:
-            uid, _ = authmod.find_account_by_username(u)
-            if uid:
-                authmod.set_account_role(uid, request.form.get("role", "viewer"))
-            audit("create_account", f"{u}|{request.form.get('role','viewer')}",
+            try:
+                uid, _ = authmod.find_account_by_username(u)
+                if uid:
+                    authmod.set_account_role(uid, request.form.get("role", "viewer"))
+            except Exception:
+                pass
+            audit("create_account",
+                  f"{u}|{request.form.get('role','viewer')}",
                   uid=me["uid"], ip=_client_ip())
             return redirect(url_for("web.accounts_page"))
+        err = res[1] if isinstance(res, (tuple, list)) and len(res) > 1 else "unknown"
     except Exception as e:
         err = str(e)
     return redirect(url_for("web.accounts_page", error=str(err)))
@@ -1458,10 +1607,6 @@ def accounts_toggle():
         pass
     return redirect(url_for("web.accounts_page"))
 
-# ============================================================
-# ACTIONS: API MANAGER
-# ============================================================
-
 @web_bp.route("/api/create", methods=["POST"])
 @require_login("admin")
 def api_create():
@@ -1476,15 +1621,14 @@ def api_create():
             int(request.form.get("rate_limit", 60)))
         audit("create_api_key", request.form.get("name", "client"),
               uid=me["uid"], ip=_client_ip())
-        body = f"""
-        <h1>✅ API KEY ĐÃ TẠO</h1>
-        <div class="box">
-          <div class="tree">{_esc(raw)}</div>
-          <div class="alert warn mt">Lưu lại ngay. Không hiển thị lại.</div>
-          <button class="neutral small mt"
-                  onclick="navigator.clipboard.writeText('{_esc(raw)}')">📋 Copy</button>
-        </div>
-        <div class="box"><a href="/api">← Quay lại</a></div>"""
+        body = (f'<h1>✅ API KEY ĐÃ TẠO</h1>'
+                f'<div class="box">'
+                f'<div class="tree">{_esc(raw)}</div>'
+                f'<div class="alert warn mt">Lưu lại ngay. Không hiển thị lại.</div>'
+                f'<button class="neutral small mt" '
+                f'onclick="navigator.clipboard.writeText(\'{_esc(raw)}\')">📋 Copy</button>'
+                f'</div>'
+                f'<div class="box"><a href="/api">← Quay lại</a></div>')
         return page("API Key", me, body, "api")
     except Exception:
         return redirect(url_for("web.api_manager"))
@@ -1497,7 +1641,7 @@ def api_toggle():
         return redirect(url_for("web.api_manager"))
     try:
         apikey.toggle_api_key(request.form.get("key", ""))
-        audit("toggle_api_key", request.form.get("key", "")[:16],
+        audit("toggle_api_key", _short(request.form.get("key", ""), 16),
               uid=me["uid"], ip=_client_ip())
     except Exception:
         pass
@@ -1511,15 +1655,11 @@ def api_delete():
         return redirect(url_for("web.api_manager"))
     try:
         apikey.delete_api_key(request.form.get("key", ""))
-        audit("delete_api_key", request.form.get("key", "")[:16],
+        audit("delete_api_key", _short(request.form.get("key", ""), 16),
               uid=me["uid"], ip=_client_ip())
     except Exception:
         pass
     return redirect(url_for("web.api_manager"))
-
-# ============================================================
-# ACTIONS: MY PANEL
-# ============================================================
 
 @web_bp.route("/my/getkey", methods=["POST"])
 @require_login()
@@ -1529,7 +1669,7 @@ def my_getkey():
         return redirect(url_for("web.my_panel", error="CSRF hoặc module lỗi"))
     try:
         rec = fetchone("SELECT key FROM accounts WHERE uid = ?", (me["uid"],))
-        if rec and rec.get("key"):
+        if rec and _safe_get(rec, "key"):
             return redirect(url_for("web.my_panel", error="Bạn đã có key"))
         k, exp, sig = keymod.create_key(
             DEFAULT_DAYS, me["username"], DEFAULT_MAX_DEVICES,
@@ -1550,8 +1690,8 @@ def my_revoke():
         return redirect(url_for("web.my_panel"))
     try:
         rec = fetchone("SELECT key FROM accounts WHERE uid = ?", (me["uid"],))
-        if rec and rec.get("key"):
-            k = rec["key"]
+        k = _safe_get(rec, "key") if rec else None
+        if k:
             if hasattr(keymod, "revoke_key"):
                 keymod.revoke_key(k)
             else:
@@ -1570,11 +1710,13 @@ def my_changepw():
     if not verify_csrf() or not authmod:
         return redirect(url_for("web.my_panel"))
     try:
-        ok, err = authmod.change_account_password(
+        res = authmod.change_account_password(
             me["uid"],
             request.form.get("old_password", ""),
             request.form.get("new_password", ""),
         )
+        ok = res[0] if isinstance(res, (tuple, list)) else res
+        err = res[1] if isinstance(res, (tuple, list)) and len(res) > 1 else ""
     except Exception as e:
         ok, err = False, str(e)
     if not ok:
@@ -1588,6 +1730,11 @@ def my_changepw():
 # ============================================================
 
 def register(app):
-    """Đăng ký blueprint vào Flask app."""
+    """Đăng ký blueprint vào Flask app. Idempotent."""
+    try:
+        if "web" in app.blueprints:
+            return app.blueprints["web"]
+    except Exception:
+        pass
     app.register_blueprint(web_bp)
     return web_bp
