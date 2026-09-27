@@ -1,7 +1,6 @@
 # ============================================================
-# FILE: web_upgrade.py
-# MÔ TẢ: Module nâng cấp toàn diện cho Flask web server
-# TÍCH HỢP: thay thế run_http_server() trong file gốc
+# FILE: bot.py
+# MÔ TẢ: Bot Telegram + Web Server Flask V2 đầy đủ
 # ============================================================
 
 import os
@@ -19,7 +18,7 @@ from functools import wraps
 import requests
 
 # ============================================================
-# IMPORT NỘI BỘ (giữ nguyên từ file gốc)
+# IMPORT MODULE NỘI BỘ
 # ============================================================
 
 try:
@@ -30,21 +29,45 @@ try:
         get_db, execute, fetchone, fetchall, insert, update, delete,
         now_ms, fmt_time, rows_to_list,
     )
-except ImportError:
+except ImportError as e:
+    print(f"[BOT] Thiếu module nội bộ: {e}")
     keymod = None
     authmod = None
     apikey = None
-    def now_ms(): return int(time.time() * 1000)
+
+    def now_ms():
+        return int(time.time() * 1000)
+
     def fmt_time(ms):
-        try: return datetime.fromtimestamp(ms/1000).strftime("%Y-%m-%d %H:%M:%S")
-        except Exception: return "-"
+        try:
+            return datetime.fromtimestamp(ms / 1000).strftime("%Y-%m-%d %H:%M:%S")
+        except Exception:
+            return "-"
+
     def fetchone(*a, **k): return None
     def fetchall(*a, **k): return []
     def execute(*a, **k): return None
+    def insert(*a, **k): return None
+    def update(*a, **k): return 0
+    def delete(*a, **k): return 0
 
 # ============================================================
-# CẤU HÌNH NÂNG CẤP
+# CẤU HÌNH
 # ============================================================
+
+BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
+API = f"https://api.telegram.org/bot{BOT_TOKEN}"
+
+ADMIN_IDS = set(
+    x.strip() for x in os.environ.get("ADMIN_IDS", "").split(",") if x.strip()
+)
+
+DEFAULT_DAYS = getattr(keymod, "DEFAULT_DAYS", 30) if keymod else 30
+DEFAULT_MAX_DEVICES = getattr(keymod, "DEFAULT_MAX_DEVICES", 1) if keymod else 1
+
+AUTO_ISSUE_ENABLED = os.environ.get("AUTO_ISSUE_ENABLED", "true").lower() == "true"
+AUTO_ISSUE_ONCE = os.environ.get("AUTO_ISSUE_ONCE", "true").lower() == "true"
+BROADCAST_DELAY = float(os.environ.get("BROADCAST_DELAY", "0.05"))
 
 SECURE_COOKIES = os.environ.get("SECURE_COOKIES", "true").lower() == "true"
 SESSION_TTL_MS = int(os.environ.get("SESSION_TTL_MS", str(7 * 86400000)))
@@ -53,12 +76,86 @@ LOGIN_LOCKOUT_MS = int(os.environ.get("LOGIN_LOCKOUT_MS", "900000"))
 RATE_LIMIT_PER_MIN = int(os.environ.get("RATE_LIMIT_PER_MIN", "60"))
 CSRF_ENABLED = os.environ.get("CSRF_ENABLED", "true").lower() == "true"
 
-# Bộ nhớ đệm rate limit trong RAM
+DATA_DIR = getattr(keymod, "DATA_DIR", "./data") if keymod else os.environ.get("DATA_DIR", "./data")
+SESSION_FILE = os.path.join(DATA_DIR, "bot_sessions.json")
+NOTIFY_FILE = os.path.join(DATA_DIR, "notify_queue.json")
+TG_USERS_FILE = os.path.join(DATA_DIR, "telegram_users.json")
+
+_bot_state = {
+    "started_at": now_ms(),
+    "updates_handled": 0,
+    "commands_handled": 0,
+    "callbacks_handled": 0,
+    "errors": 0,
+}
+
+# ============================================================
+# TIỆN ÍCH
+# ============================================================
+
+def ensure_dir(path):
+    try:
+        os.makedirs(path, exist_ok=True)
+    except Exception:
+        pass
+
+def read_json(path, default):
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return default
+
+def write_json(path, data):
+    ensure_dir(os.path.dirname(path))
+    tmp = path + ".tmp"
+    try:
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+        os.replace(tmp, path)
+    except Exception as e:
+        print(f"[BOT] write_json lỗi: {e}")
+
+def esc(text):
+    if text is None:
+        return ""
+    return html.escape(str(text), quote=False)
+
+def truncate(text, max_len=4000):
+    if not text:
+        return ""
+    if len(text) <= max_len:
+        return text
+    return text[:max_len - 20] + "\n... (rút gọn)"
+
+def humanize_delta(ms):
+    if ms <= 0:
+        return "0s"
+    s = int(ms / 1000)
+    d, s = divmod(s, 86400)
+    h, s = divmod(s, 3600)
+    m, s = divmod(s, 60)
+    parts = []
+    if d: parts.append(f"{d}d")
+    if h: parts.append(f"{h}h")
+    if m: parts.append(f"{m}m")
+    if s and not parts: parts.append(f"{s}s")
+    return " ".join(parts) or "0s"
+
+def parse_int(value, default=0):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+# ============================================================
+# RATE LIMIT (IN-MEMORY)
+# ============================================================
+
 _rl_store = {}
 _rl_lock = threading.Lock()
 
 def rate_limit(key, limit=RATE_LIMIT_PER_MIN, window=60):
-    """Kiểm tra rate limit theo key. Trả True nếu cho phép."""
     now = time.time()
     with _rl_lock:
         bucket = _rl_store.setdefault(key, [])
@@ -75,7 +172,7 @@ def _client_ip(req):
     return req.remote_addr or "0.0.0.0"
 
 # ============================================================
-# CSRF TOKEN
+# CSRF
 # ============================================================
 
 def _csrf_secret():
@@ -104,7 +201,487 @@ def check_csrf(uid, token):
     return secrets.compare_digest(expect, sig)
 
 # ============================================================
-# CSS NÂNG CẤP - DARK MODERN UI
+# TẠO TÀI KHOẢN ADMIN MẶC ĐỊNH
+# ============================================================
+
+def ensure_admin_account():
+    accounts = [
+        ("baohuy", "baohuy"),
+    ]
+    for username, password in accounts:
+        try:
+            existing = fetchone(
+                "SELECT uid FROM accounts WHERE username = ?", (username,))
+            if existing:
+                print(f"[BOT] Tài khoản {username} đã tồn tại")
+                continue
+            uid = secrets.token_hex(8)
+            salt = secrets.token_hex(16)
+            pw_hash = f"{salt}${hashlib.sha256((salt + password).encode()).hexdigest()}"
+            execute(
+                "INSERT INTO accounts "
+                "(uid, username, password_hash, role, active, created_at) "
+                "VALUES (?, ?, ?, 'admin', 1, ?)",
+                (uid, username, pw_hash, now_ms()))
+            print(f"[BOT] Đã tạo tài khoản admin: {username} / {password}")
+        except Exception as e:
+            print(f"[BOT] ensure_admin_account lỗi ({username}): {e}")
+
+# ============================================================
+# TELEGRAM API
+# ============================================================
+
+_session = requests.Session()
+_session.headers.update({"Connection": "keep-alive"})
+_tg_lock = threading.Lock()
+_last_send = [0.0]
+MIN_SEND_INTERVAL = 0.04
+
+def _rate_limit_wait():
+    with _tg_lock:
+        now = time.time()
+        delta = now - _last_send[0]
+        if delta < MIN_SEND_INTERVAL:
+            time.sleep(MIN_SEND_INTERVAL - delta)
+        _last_send[0] = time.time()
+
+def tg_call(method, payload, timeout=15):
+    if not BOT_TOKEN:
+        return None
+    _rate_limit_wait()
+    try:
+        r = _session.post(f"{API}/{method}", json=payload, timeout=timeout)
+        if r.status_code != 200:
+            print(f"[TG] {method} HTTP {r.status_code}: {r.text[:200]}")
+            return None
+        return r.json()
+    except Exception as e:
+        print(f"[TG] {method} exception: {e}")
+        return None
+
+def send_message(chat_id, text, parse_mode="HTML",
+                 disable_preview=True, reply_markup=None):
+    if not BOT_TOKEN:
+        return False
+    payload = {
+        "chat_id": chat_id,
+        "text": truncate(text, 4000),
+        "parse_mode": parse_mode,
+        "disable_web_page_preview": disable_preview,
+    }
+    if reply_markup:
+        payload["reply_markup"] = reply_markup
+    res = tg_call("sendMessage", payload)
+    return bool(res and res.get("ok"))
+
+def edit_message(chat_id, message_id, text, parse_mode="HTML", reply_markup=None):
+    payload = {
+        "chat_id": chat_id,
+        "message_id": message_id,
+        "text": truncate(text, 4000),
+        "parse_mode": parse_mode,
+    }
+    if reply_markup:
+        payload["reply_markup"] = reply_markup
+    return bool(tg_call("editMessageText", payload))
+
+def send_inline_keyboard(chat_id, text, buttons, parse_mode="HTML"):
+    return send_message(chat_id, text, parse_mode=parse_mode,
+                        reply_markup={"inline_keyboard": buttons})
+
+def answer_callback(cb_id, text="", show_alert=False):
+    tg_call("answerCallbackQuery", {
+        "callback_query_id": cb_id,
+        "text": truncate(text, 200),
+        "show_alert": show_alert,
+    })
+
+def get_me():
+    res = tg_call("getMe", {}, timeout=10)
+    if res and res.get("ok"):
+        return res.get("result")
+    return None
+
+# ============================================================
+# USER / KEY
+# ============================================================
+
+def is_admin(user_id):
+    return str(user_id) in ADMIN_IDS
+
+def get_key_by_user(user_id):
+    try:
+        row = fetchone(
+            "SELECT key FROM keys WHERE user_id = ? AND active = 1 "
+            "ORDER BY created_at DESC LIMIT 1", (str(user_id),))
+        return row["key"] if row else None
+    except Exception:
+        return None
+
+def link_key_to_user(user_id, key):
+    try:
+        execute("UPDATE keys SET user_id = ? WHERE key = ?", (str(user_id), key))
+    except Exception:
+        pass
+
+def get_or_create_key_for_user(user_id, owner=None, days=None,
+                                max_devices=None, created_by=None):
+    if not keymod:
+        return {"created": False, "key": None, "error": "module key lỗi"}
+    uid = str(user_id)
+    if AUTO_ISSUE_ONCE:
+        existing = get_key_by_user(uid)
+        if existing:
+            try:
+                row = fetchone("SELECT * FROM keys WHERE key = ?", (existing,))
+                if row and row["active"] and now_ms() < row["expires_at"]:
+                    return {"created": False, "key": existing, "record": dict(row)}
+            except Exception:
+                pass
+    days = days if days is not None else DEFAULT_DAYS
+    owner = owner or f"user_{uid}"
+    max_devices = max_devices if max_devices is not None else DEFAULT_MAX_DEVICES
+    try:
+        k, exp, sig = keymod.create_key(days, owner, max_devices,
+                                         user_id=uid, created_by=created_by)
+        link_key_to_user(uid, k)
+        return {"created": True, "key": k, "expiresAt": exp, "signature": sig}
+    except Exception as e:
+        print(f"[BOT] create_key lỗi: {e}")
+        return {"created": False, "key": None, "error": str(e)}
+
+# ============================================================
+# SESSION / NOTIFY
+# ============================================================
+
+def set_session(user_id, state, data=None, ttl=300000):
+    sessions = read_json(SESSION_FILE, {})
+    sessions[str(user_id)] = {
+        "state": state, "data": data or {},
+        "updatedAt": now_ms(), "ttl": ttl,
+    }
+    write_json(SESSION_FILE, sessions)
+
+def get_session(user_id):
+    sessions = read_json(SESSION_FILE, {})
+    s = sessions.get(str(user_id))
+    if not s: return None
+    ttl = s.get("ttl", 300000)
+    if now_ms() - s.get("updatedAt", 0) > ttl:
+        clear_session(user_id)
+        return None
+    return s
+
+def clear_session(user_id):
+    sessions = read_json(SESSION_FILE, {})
+    sessions.pop(str(user_id), None)
+    write_json(SESSION_FILE, sessions)
+
+def push_notify(target, message, level="info"):
+    queue = read_json(NOTIFY_FILE, [])
+    queue.append({
+        "target": str(target), "message": message,
+        "level": level, "time": now_ms(), "tries": 0,
+    })
+    write_json(NOTIFY_FILE, queue)
+
+def flush_notify():
+    queue = read_json(NOTIFY_FILE, [])
+    if not queue: return
+    remaining = []
+    for item in queue:
+        tries = item.get("tries", 0) + 1
+        if tries > 3: continue
+        ok = send_message(item["target"], item["message"])
+        if not ok:
+            item["tries"] = tries
+            remaining.append(item)
+        time.sleep(0.05)
+    write_json(NOTIFY_FILE, remaining)
+
+def notify_admins(message, level="info"):
+    for admin_id in ADMIN_IDS:
+        push_notify(admin_id, message, level)
+
+def notify_key_created(key, owner, days, by=None):
+    msg = (f"🔑 <b>Key mới</b>\n<code>{esc(key)}</code>\n"
+           f"Chủ: {esc(owner)}\nHạn: {days} ngày")
+    if by: msg += f"\nBởi: {esc(by)}"
+    notify_admins(msg)
+
+def sync_telegram_user(user_id, username, first_name, last_name=None):
+    users = read_json(TG_USERS_FILE, {})
+    uid = str(user_id)
+    now = now_ms()
+    if uid not in users:
+        users[uid] = {
+            "username": username, "firstName": first_name,
+            "lastName": last_name, "firstSeen": now,
+            "lastSeen": now, "notify": True, "blocked": False,
+        }
+    else:
+        users[uid]["lastSeen"] = now
+        if username: users[uid]["username"] = username
+    write_json(TG_USERS_FILE, users)
+
+def list_telegram_users():
+    return read_json(TG_USERS_FILE, {})
+
+def count_telegram_users():
+    return len(list_telegram_users())
+
+# ============================================================
+# BOT HANDLERS
+# ============================================================
+
+HELP_TEXT = """
+🔑 <b>KEY SERVER BOT</b>
+
+<b>Người dùng:</b>
+/start /menu /help
+/code - Nhận key
+/mykey /myinfo
+/verify &lt;key&gt; &lt;device&gt;
+/info &lt;key&gt; /days &lt;key&gt;
+
+<b>Admin:</b>
+/stats /health /broadcast
+""".strip()
+
+def cmd_menu(chat_id, user_id):
+    admin = is_admin(user_id)
+    buttons = [
+        [{"text": "🔑 Key của tôi", "callback_data": "my_key"},
+         {"text": "ℹ️ Thông tin", "callback_data": "my_info"}],
+        [{"text": "📖 Trợ giúp", "callback_data": "help"}],
+    ]
+    if admin:
+        buttons.append([{"text": "📊 Thống kê", "callback_data": "stats"}])
+    send_inline_keyboard(chat_id, "<b>MENU CHÍNH</b>", buttons)
+
+def handle_callback(cb):
+    cb_id = cb.get("id")
+    chat_id = cb["message"]["chat"]["id"]
+    user_id = str(cb["from"]["id"])
+    data = cb.get("data", "")
+    _bot_state["callbacks_handled"] += 1
+
+    if data == "menu":
+        answer_callback(cb_id)
+        cmd_menu(chat_id, user_id)
+        return
+    if data == "help":
+        answer_callback(cb_id)
+        send_message(chat_id, HELP_TEXT)
+        return
+    if data == "my_key":
+        answer_callback(cb_id)
+        k = get_key_by_user(user_id)
+        if not k:
+            send_message(chat_id, "Chưa có key. Dùng /code.")
+            return
+        info = keymod.get_key_info(k) if keymod else None
+        if not info:
+            send_message(chat_id, "Key không tồn tại.")
+            return
+        send_message(chat_id,
+            f"<code>{esc(k)}</code>\n"
+            f"Còn: {info['daysLeft']} ngày\n"
+            f"TB: {info['devicesUsed']}/{info['maxDevices']}")
+        return
+    if data == "my_info":
+        answer_callback(cb_id)
+        k = get_key_by_user(user_id)
+        role = "admin" if is_admin(user_id) else "user"
+        send_message(chat_id,
+            f"ID: <code>{esc(user_id)}</code>\n"
+            f"Vai trò: {role}\n"
+            f"Key: <code>{esc(k or 'chưa có')}</code>")
+        return
+    if data == "stats":
+        answer_callback(cb_id)
+        cmd_stats(chat_id, user_id)
+        return
+    answer_callback(cb_id, "Không hỗ trợ")
+
+def cmd_stats(chat_id, user_id):
+    if not is_admin(user_id):
+        send_message(chat_id, "Không có quyền.")
+        return
+    try:
+        row = fetchone("""
+            SELECT
+              (SELECT COUNT(*) FROM keys) AS total,
+              (SELECT COUNT(*) FROM keys WHERE active=1) AS active,
+              (SELECT COUNT(*) FROM devices) AS devices,
+              (SELECT COUNT(*) FROM accounts) AS accounts
+        """)
+        send_message(chat_id,
+            f"<b>THỐNG KÊ</b>\n"
+            f"Tổng key: {row['total']}\n"
+            f"Hoạt động: {row['active']}\n"
+            f"Thiết bị: {row['devices']}\n"
+            f"Tài khoản: {row['accounts']}")
+    except Exception as e:
+        send_message(chat_id, f"Lỗi: {e}")
+
+def handle_command(chat_id, user_id, text):
+    parts = text.split()
+    cmd = parts[0].lower()
+    _bot_state["commands_handled"] += 1
+
+    if cmd == "/start":
+        send_message(chat_id, HELP_TEXT)
+        cmd_menu(chat_id, user_id)
+        return
+    if cmd == "/menu":
+        cmd_menu(chat_id, user_id)
+        return
+    if cmd == "/help":
+        send_message(chat_id, HELP_TEXT)
+        return
+    if cmd == "/code":
+        if not AUTO_ISSUE_ENABLED:
+            send_message(chat_id, "Chức năng cấp key đang tắt.")
+            return
+        result = get_or_create_key_for_user(user_id, owner=f"tg_{user_id}")
+        if result.get("key"):
+            send_message(chat_id,
+                f"{'Đã cấp' if result['created'] else 'Đã có'} key:\n"
+                f"<code>{esc(result['key'])}</code>")
+        else:
+            send_message(chat_id, f"Lỗi: {result.get('error', 'không rõ')}")
+        return
+    if cmd == "/mykey":
+        k = get_key_by_user(user_id)
+        if not k:
+            send_message(chat_id, "Chưa có key. Dùng /code.")
+            return
+        send_message(chat_id, f"<code>{esc(k)}</code>")
+        return
+    if cmd == "/myinfo":
+        k = get_key_by_user(user_id)
+        role = "admin" if is_admin(user_id) else "user"
+        send_message(chat_id,
+            f"ID: <code>{esc(user_id)}</code>\n"
+            f"Vai trò: {role}\n"
+            f"Key: <code>{esc(k or 'chưa có')}</code>")
+        return
+    if cmd == "/info" and len(parts) >= 2:
+        info = keymod.get_key_info(parts[1]) if keymod else None
+        if not info:
+            send_message(chat_id, "Key không tồn tại.")
+            return
+        send_message(chat_id,
+            f"Key: <code>{esc(info['key'])}</code>\n"
+            f"Chủ: {esc(info.get('owner','-'))}\n"
+            f"Còn: {info['daysLeft']} ngày\n"
+            f"TB: {info['devicesUsed']}/{info['maxDevices']}")
+        return
+    if cmd == "/days" and len(parts) >= 2:
+        info = keymod.get_key_info(parts[1]) if keymod else None
+        if not info:
+            send_message(chat_id, "Key không tồn tại.")
+            return
+        send_message(chat_id, f"Còn {info['daysLeft']} ngày.")
+        return
+    if cmd == "/verify" and len(parts) >= 3:
+        if not keymod:
+            send_message(chat_id, "Module key lỗi.")
+            return
+        result = keymod.verify_key(parts[1], parts[2], "tg", "telegram")
+        if result.get("ok"):
+            send_message(chat_id, "✅ Key hợp lệ.")
+        else:
+            send_message(chat_id, f"❌ {result.get('error', 'không hợp lệ')}")
+        return
+    if cmd == "/stats":
+        cmd_stats(chat_id, user_id)
+        return
+    if cmd == "/health":
+        ok = False
+        try:
+            ok = fetchone("SELECT 1 AS x") is not None
+        except Exception:
+            pass
+        send_message(chat_id,
+            f"DB: {'OK' if ok else 'FAIL'}\n"
+            f"Uptime: {humanize_delta(now_ms() - _bot_state['started_at'])}")
+        return
+    if cmd == "/broadcast" and is_admin(user_id):
+        msg = text[len("/broadcast"):].strip()
+        if not msg:
+            send_message(chat_id, "Cú pháp: /broadcast &lt;nội dung&gt;")
+            return
+        users = list_telegram_users()
+        sent, fail = 0, 0
+        for uid in users:
+            if send_message(uid, msg):
+                sent += 1
+            else:
+                fail += 1
+            time.sleep(BROADCAST_DELAY)
+        send_message(chat_id, f"Đã gửi: {sent} | Lỗi: {fail}")
+        return
+    send_message(chat_id, f"Lệnh không hỗ trợ: {esc(cmd)}")
+
+def handle_update(update):
+    try:
+        _bot_state["updates_handled"] += 1
+        if "callback_query" in update:
+            handle_callback(update["callback_query"])
+            return
+        msg = update.get("message")
+        if not msg or "text" not in msg:
+            return
+        chat_id = msg["chat"]["id"]
+        user_id = str(msg["from"]["id"])
+        text = msg["text"].strip()
+        cmd = text.split()[0].lower() if text else ""
+        sync_telegram_user(user_id, msg["from"].get("username"),
+                           msg["from"].get("first_name"))
+        if cmd.startswith("/"):
+            handle_command(chat_id, user_id, text)
+    except Exception as e:
+        _bot_state["errors"] += 1
+        print(f"[BOT] handle_update lỗi: {e}")
+
+def polling_worker():
+    offset = 0
+    backoff = 3
+    print("[BOT] Bắt đầu polling...")
+    while True:
+        try:
+            res = tg_call("getUpdates", {
+                "offset": offset, "timeout": 30,
+                "allowed_updates": ["message", "callback_query"],
+            }, timeout=40)
+            if not res or not res.get("ok"):
+                time.sleep(backoff)
+                backoff = min(backoff * 2, 30)
+                continue
+            backoff = 3
+            for upd in res.get("result", []):
+                offset = upd["update_id"] + 1
+                handle_update(upd)
+        except Exception as e:
+            print(f"[BOT] polling lỗi: {e}")
+            time.sleep(backoff)
+            backoff = min(backoff * 2, 30)
+
+def notify_worker():
+    while True:
+        try:
+            flush_notify()
+        except Exception:
+            pass
+        time.sleep(10)
+
+def start_workers():
+    threading.Thread(target=notify_worker, daemon=True).start()
+
+# ============================================================
+# CSS V2 - DARK MODERN UI
 # ============================================================
 
 CSS_V2 = """
@@ -133,8 +710,6 @@ h2{font-size:16px;color:var(--accent);margin:0 0 10px;font-weight:600}
 h3{font-size:14px;color:var(--info);margin:0 0 6px}
 a{color:var(--accent);text-decoration:none;transition:color .15s}
 a:hover{color:var(--info)}
-
-/* NAV */
 .topnav{
   position:sticky;top:0;z-index:50;
   display:flex;align-items:center;gap:8px;flex-wrap:wrap;
@@ -154,8 +729,7 @@ a:hover{color:var(--info)}
   color:var(--fg2);font-size:12px;transition:all .15s;
 }
 .topnav a.navlink:hover{background:var(--border2);color:var(--fg)}
-
-/* TAG */
+.topnav a.navlink.active{background:var(--accent2);color:#fff}
 .tag{
   display:inline-flex;align-items:center;gap:4px;
   padding:3px 8px;border-radius:20px;
@@ -166,8 +740,6 @@ a:hover{color:var(--info)}
 .tag.user{background:rgba(63,185,80,.15);color:var(--ok);border:1px solid rgba(63,185,80,.3)}
 .tag.on{background:rgba(63,185,80,.15);color:var(--ok)}
 .tag.off{background:rgba(248,81,73,.15);color:var(--err)}
-
-/* PANEL */
 .panel{
   background:var(--panel);
   border:1px solid var(--border);
@@ -176,8 +748,6 @@ a:hover{color:var(--info)}
   box-shadow:var(--shadow);
 }
 .panel.tight{padding:12px}
-
-/* FORM */
 input,button,select,textarea{
   width:100%;
   background:var(--bg2);color:var(--fg);
@@ -205,15 +775,11 @@ button.neutral:hover{background:var(--border2)}
 button.ghost{background:transparent;border:1px solid var(--border2);color:var(--fg2)}
 button.ghost:hover{border-color:var(--accent);color:var(--accent)}
 button.small{padding:6px 10px;font-size:12px;width:auto}
-
-/* GRID */
 .grid{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
 .grid-2{display:grid;gap:10px;grid-template-columns:1fr 1fr}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start}
 .row > *{flex:1;min-width:120px}
 .row.tight > *{min-width:0}
-
-/* STAT */
 .stat{
   background:var(--bg2);border:1px solid var(--border);
   padding:12px;border-radius:var(--radius);
@@ -225,15 +791,11 @@ button.small{padding:6px 10px;font-size:12px;width:auto}
 .stat.ok .value{color:var(--ok)}
 .stat.warn .value{color:var(--warn)}
 .stat.err .value{color:var(--err)}
-
-/* TABLE */
 table{width:100%;border-collapse:collapse;font-size:12px;margin-top:6px}
 th,td{border-bottom:1px solid var(--border);padding:9px 8px;text-align:left;vertical-align:top}
 th{background:var(--bg2);color:var(--accent);font-weight:600;text-transform:uppercase;font-size:11px;letter-spacing:.5px}
 tr:hover td{background:rgba(88,166,255,.04)}
 td code{background:var(--bg2);padding:2px 6px;border-radius:4px;color:var(--ok);word-break:break-all;font-size:11px}
-
-/* CODE BLOCK */
 .codeblock{
   background:#010409;border:1px solid var(--border);
   border-radius:var(--radius);padding:12px;
@@ -246,8 +808,6 @@ td code{background:var(--bg2);padding:2px 6px;border-radius:4px;color:var(--ok);
   position:absolute;top:6px;right:8px;
   color:var(--fg3);font-size:10px;text-transform:uppercase;
 }
-
-/* ALERT */
 .alert{
   padding:10px 12px;border-radius:var(--radius);
   font-size:12px;margin-top:8px;
@@ -257,17 +817,13 @@ td code{background:var(--bg2);padding:2px 6px;border-radius:4px;color:var(--ok);
 .alert.ok{background:rgba(63,185,80,.08);color:var(--ok);border-color:var(--ok)}
 .alert.warn{background:rgba(210,153,34,.08);color:var(--warn);border-color:var(--warn)}
 .alert.info{background:rgba(121,192,255,.08);color:var(--info);border-color:var(--info)}
-
-/* WRAP */
 .wrap{max-width:440px;margin:40px auto;padding:0 12px}
 .wrap.wide{max-width:1100px}
-.container{max-width:1100px;margin:0 auto;padding:0 12px}
+.container{max-width:1100px;margin:0 auto;padding:12px}
 .muted{color:var(--fg2);font-size:12px}
 .tiny{font-size:11px;color:var(--fg3)}
 .center{text-align:center}
 .mt{margin-top:12px}.mb{margin-bottom:12px}
-
-/* TOAST */
 .toast{
   position:fixed;bottom:20px;right:20px;z-index:100;
   background:var(--panel);border:1px solid var(--border2);
@@ -279,16 +835,6 @@ td code{background:var(--bg2);padding:2px 6px;border-radius:4px;color:var(--ok);
 .toast.ok{border-left:3px solid var(--ok)}
 .toast.err{border-left:3px solid var(--err)}
 @keyframes slideIn{from{transform:translateX(120%)}to{transform:translateX(0)}}
-
-/* LOADER */
-.loader{
-  display:inline-block;width:14px;height:14px;
-  border:2px solid var(--border2);border-top-color:var(--accent);
-  border-radius:50%;animation:spin .8s linear infinite;
-}
-@keyframes spin{to{transform:rotate(360deg)}}
-
-/* RESPONSIVE */
 @media(max-width:640px){
   .topnav{padding:8px}
   .topnav a.navlink{padding:4px 8px;font-size:11px}
@@ -296,6 +842,7 @@ td code{background:var(--bg2);padding:2px 6px;border-radius:4px;color:var(--ok);
   .stat .value{font-size:18px}
   h1{font-size:17px}
   .wrap{margin:20px auto}
+  .grid-2{grid-template-columns:1fr}
 }
 </style>
 """
@@ -308,7 +855,7 @@ def _esc(t):
     if t is None: return ""
     return html.escape(str(t), quote=False)
 
-def _page(title, body, extra_head=""):
+def _page(title, body):
     return f"""<!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -318,7 +865,6 @@ def _page(title, body, extra_head=""):
 <meta name="robots" content="noindex,nofollow">
 <title>{_esc(title)} · KEY SERVER</title>
 {CSS_V2}
-{extra_head}
 </head>
 <body>
 <div class="container">{body}</div>
@@ -330,13 +876,13 @@ def _toast(msg, kind="ok"):
     return f'<div class="toast {kind}">{_esc(msg)}</div>'
 
 # ============================================================
-# FLASK APP - PHIÊN BẢN NÂNG CẤP
+# FLASK WEB SERVER V2
 # ============================================================
 
-def run_http_server_v2():
+def run_http_server():
     try:
         from flask import (Flask, jsonify, request, make_response,
-                           redirect, render_template_string, g, abort)
+                           redirect, abort)
     except ImportError:
         print("[HTTP] Flask không có, không mở port")
         return
@@ -408,7 +954,6 @@ def run_http_server_v2():
             me = current_user()
             if not me:
                 return redirect("/login?next=" + _esc(request.path))
-            g.me = me
             return f(me, *a, **k)
         return w
 
@@ -420,7 +965,6 @@ def run_http_server_v2():
                 return redirect("/login")
             if me["role"] != "admin":
                 abort(403)
-            g.me = me
             return f(me, *a, **k)
         return w
 
@@ -430,10 +974,10 @@ def run_http_server_v2():
         if not me: return False
         return check_csrf(me["uid"], request.form.get("csrf", ""))
 
-    # ---------- GLOBAL HOOKS ----------
+    # ---------- HOOKS ----------
 
     @app.before_request
-    def _rate_limit_global():
+    def _rl_global():
         ip = _client_ip(request)
         if request.path.startswith(("/api/verify", "/api/info", "/api/health")):
             return None
@@ -442,7 +986,7 @@ def run_http_server_v2():
         return None
 
     @app.after_request
-    def _sec_headers(resp):
+    def _sec(resp):
         resp.headers["X-Content-Type-Options"] = "nosniff"
         resp.headers["X-Frame-Options"] = "DENY"
         resp.headers["Referrer-Policy"] = "no-referrer"
@@ -453,7 +997,7 @@ def run_http_server_v2():
 
     @app.errorhandler(403)
     def _403(e):
-        return _page("403", f"""
+        return _page("403", """
         <div class="wrap"><div class="panel center">
         <h1>403</h1><p class="muted">Không có quyền truy cập.</p>
         <div class="mt"><a href="/my"><button>← Về trang chủ</button></a></div>
@@ -461,7 +1005,7 @@ def run_http_server_v2():
 
     @app.errorhandler(404)
     def _404(e):
-        return _page("404", f"""
+        return _page("404", """
         <div class="wrap"><div class="panel center">
         <h1>404</h1><p class="muted">Không tìm thấy trang.</p>
         <div class="mt"><a href="/my"><button>← Về trang chủ</button></a></div>
@@ -473,7 +1017,7 @@ def run_http_server_v2():
 
     @app.errorhandler(500)
     def _500(e):
-        return _page("500", f"""
+        return _page("500", """
         <div class="wrap"><div class="panel center">
         <h1>500</h1><p class="muted">Lỗi máy chủ.</p>
         </div></div>"""), 500
@@ -505,7 +1049,7 @@ def run_http_server_v2():
                 f'<a class="{cls("register")}" href="/register">Đăng ký</a></div>')
 
     # ============================================================
-    # ROUTES: AUTH
+    # AUTH ROUTES
     # ============================================================
 
     @app.route("/login", methods=["GET", "POST"])
@@ -606,7 +1150,7 @@ def run_http_server_v2():
         return resp
 
     # ============================================================
-    # ROUTES: MY PANEL
+    # MY PANEL
     # ============================================================
 
     @app.route("/my")
@@ -632,15 +1176,18 @@ def run_http_server_v2():
                         <span class="value">{info.get('devicesUsed',0)}/{info.get('maxDevices',1)}</span></div>
                       <div class="stat"><span class="label">Hết hạn</span>
                         <span class="value" style="font-size:12px">{_esc(info.get('expiresAtText','-'))}</span></div>
-                    </div>"""
+                    </div>
+                    <button class="neutral small mt" onclick="navigator.clipboard.writeText('{_esc(info['key'])}')">
+                      📋 Copy key
+                    </button>"""
             except Exception: pass
         if not key_html:
-            key_html = """
+            key_html = f"""
             <div class="alert info">Bạn chưa có key nào.</div>
             <form method="POST" action="/my/getkey" class="mt">
-                <input type="hidden" name="csrf" value="{csrf}">
+                <input type="hidden" name="csrf" value="{me['csrf']}">
                 <button type="submit">🎁 NHẬN KEY MIỄN PHÍ</button>
-            </form>""".replace("{csrf}", me["csrf"])
+            </form>"""
 
         success = request.args.get("success", "")
         error = request.args.get("error", "")
@@ -704,7 +1251,10 @@ def run_http_server_v2():
         rec = get_account_by_uid(me["uid"])
         if rec and rec.get("key") and keymod:
             try:
-                keymod.revoke_key(rec["key"])
+                if hasattr(keymod, "revoke_key"):
+                    keymod.revoke_key(rec["key"])
+                else:
+                    execute("UPDATE keys SET active = 0 WHERE key = ?", (rec["key"],))
                 execute("UPDATE accounts SET key = NULL WHERE uid = ?", (me["uid"],))
             except Exception: pass
         return redirect("/my?success=Đã+thu+hồi+key")
@@ -726,7 +1276,7 @@ def run_http_server_v2():
         return redirect("/my?success=Đã+đổi+mật+khẩu")
 
     # ============================================================
-    # ROUTES: KEYS
+    # KEYS LIST
     # ============================================================
 
     @app.route("/keys")
@@ -734,7 +1284,7 @@ def run_http_server_v2():
     def keys_list(me):
         q = request.args.get("q", "").strip()
         status = request.args.get("status", "all")
-        page = max(1, int(request.args.get("page", "1")))
+        page = max(1, int(request.args.get("page", "1") or 1))
         per_page = 25
         offset = (page - 1) * per_page
         where, params = [], []
@@ -751,7 +1301,8 @@ def run_http_server_v2():
             where.append("active = 0")
         where_sql = ("WHERE " + " AND ".join(where)) if where else ""
         try:
-            total = fetchone(f"SELECT COUNT(*) AS c FROM keys {where_sql}", tuple(params))["c"]
+            total_row = fetchone(f"SELECT COUNT(*) AS c FROM keys {where_sql}", tuple(params))
+            total = total_row["c"] if total_row else 0
             rows = fetchall(
                 f"SELECT * FROM keys {where_sql} ORDER BY created_at DESC LIMIT ? OFFSET ?",
                 tuple(params) + (per_page, offset))
@@ -778,7 +1329,8 @@ def run_http_server_v2():
             for i in range(1, pages + 1):
                 if abs(i - page) <= 2 or i == 1 or i == pages:
                     qs = f"?q={_esc(q)}&status={status}&page={i}"
-                    pager += f'<a href="/keys{qs}"><button class="{"neutral" if i!=page else ""} small">{i}</button></a>'
+                    btn_cls = "neutral" if i != page else ""
+                    pager += f'<a href="/keys{qs}"><button class="{btn_cls} small">{i}</button></a>'
             pager += '</div>'
         body = nav(me, "keys") + f"""
         <div class="panel">
@@ -802,7 +1354,7 @@ def run_http_server_v2():
         return _page("Keys", body)
 
     # ============================================================
-    # ROUTES: CREATE KEY
+    # CREATE KEY
     # ============================================================
 
     @app.route("/create", methods=["GET", "POST"])
@@ -867,7 +1419,7 @@ def run_http_server_v2():
         return _page("Tạo key", body)
 
     # ============================================================
-    # ROUTES: ADMIN
+    # ADMIN PANEL
     # ============================================================
 
     @app.route("/admin")
@@ -917,7 +1469,7 @@ def run_http_server_v2():
         return _page("Admin", body)
 
     # ============================================================
-    # ROUTES: API MANAGER
+    # API MANAGER
     # ============================================================
 
     @app.route("/api")
@@ -1023,7 +1575,7 @@ def run_http_server_v2():
         return redirect("/api")
 
     # ============================================================
-    # JSON API
+    # PUBLIC JSON API
     # ============================================================
 
     @app.route("/api/health")
@@ -1105,7 +1657,68 @@ def run_http_server_v2():
 
     port = int(os.environ.get("PORT", 10000))
     host = "0.0.0.0"
-    print(f"[HTTP-v2] Flask chạy {host}:{port}")
-    print("[HTTP-v2] Routes: /login /register /my /keys /create /api /admin")
+    print(f"[HTTP] Flask chạy {host}:{port}")
+    print("[HTTP] Routes: /login /register /my /keys /create /api /admin")
     app.run(host=host, port=port, threaded=True,
             use_reloader=False, debug=False)
+
+# ============================================================
+# ENTRY POINT
+# ============================================================
+
+def wait_for_token():
+    global BOT_TOKEN, API
+    if BOT_TOKEN:
+        return True
+    print("[BOT] Thiếu BOT_TOKEN. Chờ biến môi trường...")
+    while not os.environ.get("BOT_TOKEN"):
+        time.sleep(30)
+    BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
+    API = f"https://api.telegram.org/bot{BOT_TOKEN}"
+    print("[BOT] Đã nhận BOT_TOKEN.")
+    return True
+
+def check_bot():
+    me = get_me()
+    if me:
+        print(f"[BOT] OK: @{me.get('username')}")
+        return True
+    return False
+
+def main():
+    ensure_dir(DATA_DIR)
+    ensure_admin_account()
+    print(f"[BOT] Python: {sys.version.split()[0]}")
+    print(f"[BOT] PORT: {os.environ.get('PORT', '10000')}")
+    print(f"[BOT] DATA_DIR: {DATA_DIR}")
+    print(f"[BOT] BOT_TOKEN: {'SET' if BOT_TOKEN else 'MISSING'}")
+
+    http_thread = threading.Thread(target=run_http_server,
+                                    daemon=True, name="http-server")
+    http_thread.start()
+    print("[BOT] Đã khởi động HTTP server thread")
+    time.sleep(1)
+
+    if not BOT_TOKEN:
+        print("[BOT] Không có BOT_TOKEN, chỉ chạy HTTP server.")
+        while True:
+            time.sleep(3600)
+
+    wait_for_token()
+    while not check_bot():
+        print("[BOT] Token chưa hợp lệ. Thử lại sau 30s...")
+        time.sleep(30)
+
+    start_workers()
+    polling_worker()
+
+if __name__ == "__main__":
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("[BOT] Dừng theo yêu cầu.")
+    except Exception as e:
+        print(f"[BOT] Lỗi nghiêm trọng: {e}")
+        traceback.print_exc()
+        while True:
+            time.sleep(3600)
