@@ -43,23 +43,12 @@ except ImportError as e:
         except Exception:
             return "-"
 
-    def fetchone(*a, **k):
-        return None
-
-    def fetchall(*a, **k):
-        return []
-
-    def execute(*a, **k):
-        return None
-
-    def insert(*a, **k):
-        return None
-
-    def update(*a, **k):
-        return 0
-
-    def delete(*a, **k):
-        return 0
+    def fetchone(*a, **k): return None
+    def fetchall(*a, **k): return []
+    def execute(*a, **k): return None
+    def insert(*a, **k): return None
+    def update(*a, **k): return 0
+    def delete(*a, **k): return 0
 
 # ============================================================
 # CẤU HÌNH
@@ -77,10 +66,7 @@ DEFAULT_MAX_DEVICES = getattr(keymod, "DEFAULT_MAX_DEVICES", 1) if keymod else 1
 
 AUTO_ISSUE_ENABLED = os.environ.get("AUTO_ISSUE_ENABLED", "true").lower() == "true"
 AUTO_ISSUE_ONCE = os.environ.get("AUTO_ISSUE_ONCE", "true").lower() == "true"
-CTV_MAX_DAYS = int(os.environ.get("CTV_MAX_DAYS", "30"))
-CTV_MAX_KEYS = int(os.environ.get("CTV_MAX_KEYS", "50"))
 BROADCAST_DELAY = float(os.environ.get("BROADCAST_DELAY", "0.05"))
-WEBHOOK_SECRET = os.environ.get("WEBHOOK_SECRET", "")
 
 DATA_DIR = getattr(keymod, "DATA_DIR", "./data") if keymod else os.environ.get("DATA_DIR", "./data")
 SESSION_FILE = os.path.join(DATA_DIR, "bot_sessions.json")
@@ -93,7 +79,6 @@ _bot_state = {
     "commands_handled": 0,
     "callbacks_handled": 0,
     "errors": 0,
-    "last_error": None,
 }
 
 # ============================================================
@@ -156,6 +141,34 @@ def parse_int(value, default=0):
         return default
 
 # ============================================================
+# TẠO TÀI KHOẢN ADMIN MẶC ĐỊNH
+# ============================================================
+
+def ensure_admin_account():
+    """Tạo tài khoản admin mặc định baohuy/baohuy nếu chưa có."""
+    accounts = [
+        ("baohuy", "baohuy"),
+    ]
+    for username, password in accounts:
+        try:
+            existing = fetchone(
+                "SELECT uid FROM accounts WHERE username = ?", (username,))
+            if existing:
+                print(f"[BOT] Tài khoản {username} đã tồn tại")
+                continue
+            uid = secrets.token_hex(8)
+            salt = secrets.token_hex(16)
+            pw_hash = f"{salt}${hashlib.sha256((salt + password).encode()).hexdigest()}"
+            execute(
+                "INSERT INTO accounts "
+                "(uid, username, password_hash, role, active, created_at) "
+                "VALUES (?, ?, ?, 'admin', 1, ?)",
+                (uid, username, pw_hash, now_ms()))
+            print(f"[BOT] Đã tạo tài khoản admin: {username} / {password}")
+        except Exception as e:
+            print(f"[BOT] ensure_admin_account lỗi ({username}): {e}")
+
+# ============================================================
 # TELEGRAM API
 # ============================================================
 
@@ -211,8 +224,7 @@ def edit_message(chat_id, message_id, text, parse_mode="HTML", reply_markup=None
     }
     if reply_markup:
         payload["reply_markup"] = reply_markup
-    res = tg_call("editMessageText", payload)
-    return bool(res and res.get("ok"))
+    return bool(tg_call("editMessageText", payload))
 
 def send_inline_keyboard(chat_id, text, buttons, parse_mode="HTML"):
     return send_message(chat_id, text, parse_mode=parse_mode,
@@ -232,26 +244,11 @@ def get_me():
     return None
 
 # ============================================================
-# CTV / USER
+# USER / KEY
 # ============================================================
-
-def is_ctv(user_id):
-    try:
-        row = fetchone("SELECT user_id FROM ctv WHERE user_id = ? AND active = 1",
-                       (str(user_id),))
-        return row is not None
-    except Exception:
-        return False
 
 def is_admin(user_id):
     return str(user_id) in ADMIN_IDS
-
-def get_ctv(user_id):
-    try:
-        row = fetchone("SELECT * FROM ctv WHERE user_id = ?", (str(user_id),))
-        return dict(row) if row else None
-    except Exception:
-        return None
 
 def get_key_by_user(user_id):
     try:
@@ -375,7 +372,7 @@ def count_telegram_users():
     return len(list_telegram_users())
 
 # ============================================================
-# HELP & MENU BOT
+# BOT HANDLERS
 # ============================================================
 
 HELP_TEXT = """
@@ -389,7 +386,7 @@ HELP_TEXT = """
 /info &lt;key&gt; /days &lt;key&gt;
 
 <b>Admin:</b>
-/stats /botstats /health /broadcast
+/stats /health /broadcast
 """.strip()
 
 def cmd_menu(chat_id, user_id):
@@ -436,7 +433,7 @@ def handle_callback(cb):
     if data == "my_info":
         answer_callback(cb_id)
         k = get_key_by_user(user_id)
-        role = "admin" if is_admin(user_id) else "ctv" if is_ctv(user_id) else "user"
+        role = "admin" if is_admin(user_id) else "user"
         send_message(chat_id,
             f"ID: <code>{esc(user_id)}</code>\n"
             f"Vai trò: {role}\n"
@@ -672,8 +669,7 @@ def run_http_server():
             execute(
                 "INSERT OR REPLACE INTO sessions "
                 "(token, uid, created_at, expires_at) VALUES (?, ?, ?, ?)",
-                (token, uid, now_ms(), now_ms() + 7 * 86400000),
-            )
+                (token, uid, now_ms(), now_ms() + 7 * 86400000))
         except Exception:
             pass
         return token
@@ -832,7 +828,6 @@ def run_http_server():
             <form method="POST" action="/my/getkey">
                 <button type="submit">NHẬN KEY</button>
             </form>"""
-
         success = request.args.get("success", "")
         error = request.args.get("error", "")
         body = nav(me) + f"""
@@ -864,8 +859,8 @@ def run_http_server():
                 user_id=me["uid"])
             execute("UPDATE accounts SET key = ? WHERE uid = ?", (k, me["uid"]))
             notify_key_created(k, rec["username"], DEFAULT_DAYS, by=me["username"])
-        except Exception as e:
-            return redirect(f"/my?error=Lỗi+tạo+key")
+        except Exception:
+            return redirect("/my?error=Lỗi+tạo+key")
         return redirect("/my?success=Đã+cấp+key")
 
     @app.route("/my/changepw", methods=["POST"])
@@ -1017,11 +1012,7 @@ def run_http_server():
           <tr><td>POST</td><td>/api/verify</td><td>Xác thực key + device</td></tr>
           <tr><td>POST</td><td>/api/info</td><td>Thông tin key</td></tr>
           <tr><td>GET</td><td>/api/health</td><td>Trạng thái service</td></tr>
-          <tr><td>GET</td><td>/api/stats</td><td>Thống kê (cần token)</td></tr>
         </table>
-        <div class="muted" style="margin-top:8px">
-          Gửi header <code>X-API-Key: ks_...</code> khi gọi API.
-        </div>
         </div>"""
         return page("API", body)
 
@@ -1118,15 +1109,6 @@ def run_http_server():
             print(f"[HTTP] webhook lỗi: {e}")
         return "OK", 200
 
-    @app.route("/webhook", methods=["POST"])
-    def webhook_noprefix():
-        try:
-            data = request.get_json(force=True, silent=True) or {}
-            handle_update(data)
-        except Exception as e:
-            print(f"[HTTP] webhook lỗi: {e}")
-        return "OK", 200
-
     # ---------------- INDEX ----------------
 
     @app.route("/")
@@ -1184,6 +1166,7 @@ def check_bot():
 
 def main():
     ensure_dir(DATA_DIR)
+    ensure_admin_account()
     print(f"[BOT] Python: {sys.version.split()[0]}")
     print(f"[BOT] PORT: {os.environ.get('PORT', '10000')}")
     print(f"[BOT] DATA_DIR: {DATA_DIR}")
