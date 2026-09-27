@@ -1,27 +1,24 @@
-# bot.py - Telegram Bot Key Server - Full 1 file (2000 dòng)
+# bot.py - Telegram Bot Key Server - Full 1 file (requests thuần)
 # Tác giả: MADE BY Bao Huy
-# Chạy độc lập: python bot.py
+# Chạy: python bot.py
 # Yêu cầu: key.py, auth.py, apikey.py, db.py cùng thư mục
-
-# ============================================================
-# IMPORT
-# ============================================================
+# KHÔNG dùng python-telegram-bot, chỉ dùng requests
 
 import os
 import sys
 import json
 import time
 import html
-import math
-import random
-import string
-import hashlib
 import secrets
 import threading
 import traceback
-from datetime import datetime, timedelta
+from datetime import datetime
 
 import requests
+
+# ============================================================
+# IMPORT MODULE NỘI BỘ
+# ============================================================
 
 try:
     import key as keymod
@@ -128,11 +125,8 @@ def parse_int(value, default=0):
     except (TypeError, ValueError):
         return default
 
-def random_token(n=16):
-    return secrets.token_urlsafe(n)
-
 # ============================================================
-# TELEGRAM API
+# TELEGRAM API (REQUESTS THUẦN)
 # ============================================================
 
 _session = requests.Session()
@@ -385,12 +379,6 @@ def clear_session(user_id):
     sessions.pop(str(user_id), None)
     write_json(SESSION_FILE, sessions)
 
-def session_count():
-    sessions = read_json(SESSION_FILE, {})
-    now = now_ms()
-    return sum(1 for s in sessions.values()
-               if now - s.get("updatedAt", 0) <= s.get("ttl", 300000))
-
 # ============================================================
 # NOTIFY QUEUE
 # ============================================================
@@ -436,11 +424,6 @@ def notify_device_blocked(device_id, key, reason="unknown"):
                   f"Device: <code>{esc(device_id)}</code>\n"
                   f"Key: <code>{esc(key)}</code>\nLý do: {esc(reason)}")
 
-def notify_login(username, ip=""):
-    msg = f"👤 Đăng nhập: <b>{esc(username)}</b>"
-    if ip: msg += f" từ {esc(ip)}"
-    notify_admins(msg)
-
 # ============================================================
 # TELEGRAM USER SYNC
 # ============================================================
@@ -471,19 +454,6 @@ def list_telegram_users():
 
 def count_telegram_users():
     return len(read_json(TG_USERS_FILE, {}))
-
-def user_is_banned_tg(user_id):
-    u = get_telegram_user(user_id)
-    return bool(u and u.get("blocked"))
-
-def toggle_tg_user_ban(user_id):
-    users = read_json(TG_USERS_FILE, {})
-    uid = str(user_id)
-    if uid not in users:
-        return None
-    users[uid]["blocked"] = not users[uid].get("blocked", False)
-    write_json(TG_USERS_FILE, users)
-    return users[uid]["blocked"]
 
 # ============================================================
 # HELP & MENU
@@ -704,8 +674,7 @@ def cmd_botstats(chat_id, user_id):
         f"Bot: @{esc((me or {}).get('username', '-'))}\n"
         f"Webhook: {'ON' if wh.get('url') else 'OFF'}\n"
         f"Pending: {wh.get('pending_update_count', 0)}\n"
-        f"Users: {count_telegram_users()}\n"
-        f"Sessions: {session_count()}")
+        f"Users: {count_telegram_users()}")
 
 def cmd_health(chat_id, user_id):
     ok_db = False
@@ -817,12 +786,10 @@ def handle_callback(cb):
         edit_message(chat_id, message_id, "<b>MENU CHÍNH</b>", reply_markup=None)
         cmd_menu(chat_id, user_id)
         return
-
     if data == "help":
         answer_callback(cb_id)
         send_message(chat_id, HELP_TEXT)
         return
-
     if data == "my_key":
         answer_callback(cb_id)
         k = get_key_by_user(user_id)
@@ -840,7 +807,6 @@ def handle_callback(cb):
             f"TB: {info['devicesUsed']}/{info['maxDevices']}\n"
             f"Trạng thái: {'ON' if info['active'] else 'OFF'}")
         return
-
     if data == "my_devices":
         answer_callback(cb_id)
         k = get_key_by_user(user_id)
@@ -858,7 +824,6 @@ def handle_callback(cb):
                          f"  IP: {esc(r['ip'])} | Lần cuối: {fmt_time(r['last_seen'])}")
         send_message(chat_id, "\n".join(lines))
         return
-
     if data == "my_info":
         answer_callback(cb_id)
         tg = get_telegram_user(user_id) or {}
@@ -872,7 +837,6 @@ def handle_callback(cb):
             f"Vai trò: {role}\n"
             f"Key: <code>{esc(k or 'chưa có')}</code>")
         return
-
     if data == "create_key":
         answer_callback(cb_id)
         if not (is_ctv(user_id) or is_admin(user_id)):
@@ -880,7 +844,6 @@ def handle_callback(cb):
         set_session(user_id, "create_key", {"step": "days"})
         send_message(chat_id, "Nhập số ngày cho key mới (hoặc /cancel):")
         return
-
     if data == "tree":
         answer_callback(cb_id)
         try:
@@ -891,7 +854,6 @@ def handle_callback(cb):
         send_message(chat_id, "🌳 <b>CÂY KEY</b>\n" +
                      ("\n".join(lines) if lines else "Chưa có key."))
         return
-
     if data == "mystats":
         answer_callback(cb_id)
         if not (is_ctv(user_id) or is_admin(user_id)):
@@ -904,28 +866,18 @@ def handle_callback(cb):
                 f"Max ngày: {rec.get('max_days')}\n"
                 f"Trạng thái: {'ON' if rec.get('active') else 'OFF'}")
         return
-
     if data == "admin_panel":
         answer_callback(cb_id)
         cmd_admin_panel(chat_id, user_id, message_id)
         return
-
-    if data == "stats":
-        answer_callback(cb_id); cmd_stats(chat_id, user_id); return
-    if data == "admin_keys":
-        answer_callback(cb_id); cmd_list(chat_id, user_id, ["/list", "20"]); return
-    if data == "admin_devices":
-        answer_callback(cb_id); cmd_devices(chat_id, user_id); return
-    if data == "blocks":
-        answer_callback(cb_id); cmd_blocklist(chat_id, user_id); return
-    if data == "ctv_list":
-        answer_callback(cb_id); cmd_ctvlist(chat_id, user_id); return
-    if data == "api_list":
-        answer_callback(cb_id); cmd_apikeys(chat_id, user_id); return
-    if data == "admin_logs":
-        answer_callback(cb_id); cmd_logs(chat_id, user_id, ["/logs", "10"]); return
-    if data == "bot_stats":
-        answer_callback(cb_id); cmd_botstats(chat_id, user_id); return
+    if data == "stats": answer_callback(cb_id); cmd_stats(chat_id, user_id); return
+    if data == "admin_keys": answer_callback(cb_id); cmd_list(chat_id, user_id, ["/list", "20"]); return
+    if data == "admin_devices": answer_callback(cb_id); cmd_devices(chat_id, user_id); return
+    if data == "blocks": answer_callback(cb_id); cmd_blocklist(chat_id, user_id); return
+    if data == "ctv_list": answer_callback(cb_id); cmd_ctvlist(chat_id, user_id); return
+    if data == "api_list": answer_callback(cb_id); cmd_apikeys(chat_id, user_id); return
+    if data == "admin_logs": answer_callback(cb_id); cmd_logs(chat_id, user_id, ["/logs", "10"]); return
+    if data == "bot_stats": answer_callback(cb_id); cmd_botstats(chat_id, user_id); return
 
     answer_callback(cb_id, "Không hỗ trợ")
 
@@ -1383,7 +1335,7 @@ def start_workers():
     threading.Thread(target=cleanup_worker, daemon=True).start()
 
 # ============================================================
-# ENTRY POINT - KHÔNG THOÁT KHI THIẾU TOKEN
+# ENTRY POINT
 # ============================================================
 
 def check_bot():
