@@ -1,228 +1,387 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Con nhện chạy trên studio.prompt</title>
-<style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  html, body {
-    width: 100%;
-    height: 100%;
-    background: #0a0a12;
-    overflow: hidden;
-    font-family: 'Courier New', monospace;
-  }
-  #c {
-    display: block;
-    width: 100vw;
-    height: 100vh;
-    cursor: crosshair;
-  }
-</style>
-</head>
-<body>
-<canvas id="c"></canvas>
-<script>
-var canvas = document.getElementById('c');
-var ctx = canvas.getContext('2d');
-var W = 0, H = 0;
+/* ==========================================================================
+   KHỐI CON NHỆN CHẠY TRÊN CODE
+   Khung chứa canvas, tiêu đề, điều khiển và hiệu ứng
+   ========================================================================== */
 
-// Nhãn lấy từ studio.prompt trong ảnh
-var LABELS = [
-  'staff hired', 'source packet', 'clear object', 'drafts',
-  'role', 'objective', 'ship', 'one', 'manual run', 'start',
-  'result', 'repeat', 'use only', 'actually', 'provided',
-  'brand', 'fact sheet', 'transcript', 'saved', 'feedback',
-  'next', 'approve', 'publishing', 'external', 'context',
-  'researcher', 'writer', 'producer', 'editor', 'publisher'
-];
-
-var nodes = [];
-var spider = {
-  index: 0,
-  x: 0,
-  y: 0,
-  vx: 0,
-  vy: 0,
-  legPhase: 0,
-  wait: 0,
-  size: 2,
-  color: '#c060ff',
-  speed: 0.25,
-  maxSpeed: 7
-};
-
-function resize() {
-  W = canvas.width = window.innerWidth;
-  H = canvas.height = window.innerHeight;
-  buildNodes();
-  resetSpider();
+/* --------------------------------------------------------------------------
+   KHUNG CHỨA CANVAS
+   -------------------------------------------------------------------------- */
+.spider-card {
+  padding: 0;
+  overflow: hidden;
+  min-height: 480px;
+  background: #050508;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2xl);
+  position: relative;
+  isolation: isolate;
+  transition: border-color var(--transition-base),
+              box-shadow var(--transition-base);
 }
 
-function buildNodes() {
-  nodes = [];
-  if (W <= 0 || H <= 0) return;
+.spider-card:hover {
+  border-color: var(--border-light);
+  box-shadow: 0 0 32px rgba(192, 96, 255, 0.15);
+}
 
-  var paddingX = 130;
-  var paddingY = 70;
-  var cols = Math.max(2, Math.floor(W / paddingX));
-  var rows = Math.ceil(LABELS.length / cols);
-  var offsetX = (W - (cols - 1) * paddingX) / 2;
-  var offsetY = (H - (rows - 1) * paddingY) / 2;
+.spider-card:focus-within {
+  outline: 1px solid #c060ff;
+  outline-offset: 2px;
+}
 
-  for (var i = 0; i < LABELS.length; i++) {
-    var col = i % cols;
-    var row = Math.floor(i / cols);
-    nodes.push({
-      label: LABELS[i],
-      x: offsetX + col * paddingX,
-      y: offsetY + row * paddingY,
-      radius: 28
-    });
+/* Lớp phủ viền phát sáng */
+.spider-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse at top left,
+    rgba(192, 96, 255, 0.08),
+    transparent 60%
+  );
+  z-index: 1;
+}
+
+/* --------------------------------------------------------------------------
+   CANVAS
+   -------------------------------------------------------------------------- */
+.spider-card canvas {
+  display: block;
+  width: 100%;
+  height: 480px;
+  background: #050508;
+  cursor: crosshair;
+  position: relative;
+  z-index: 0;
+  touch-action: none;
+}
+
+/* --------------------------------------------------------------------------
+   TIÊU ĐỀ KHỐI
+   -------------------------------------------------------------------------- */
+.spider-header {
+  position: absolute;
+  top: 14px;
+  left: 18px;
+  z-index: 2;
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  pointer-events: none;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.spider-header::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #c060ff;
+  box-shadow: 0 0 8px #c060ff;
+  animation: spider-pulse 2s ease-in-out infinite;
+}
+
+.spider-header .accent {
+  color: #c060ff;
+  font-weight: 700;
+}
+
+@keyframes spider-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* --------------------------------------------------------------------------
+   CHÚ THÍCH DƯỚI KHỐI
+   -------------------------------------------------------------------------- */
+.spider-caption {
+  margin-top: var(--space-md);
+  font-size: var(--fs-xs);
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  letter-spacing: 1px;
+  text-align: center;
+  text-transform: uppercase;
+  user-select: none;
+}
+
+.spider-caption .accent {
+  color: #c060ff;
+}
+
+/* --------------------------------------------------------------------------
+   ĐIỀU KHIỂN CON NHỆN
+   -------------------------------------------------------------------------- */
+.spider-controls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-md);
+  margin-top: var(--space-lg);
+}
+
+.spider-controls .btn {
+  padding: var(--space-sm) var(--space-base);
+  font-size: var(--fs-xs);
+  letter-spacing: 2px;
+}
+
+.spider-controls .btn.active {
+  color: #ffffff;
+  border-color: #c060ff;
+  background: rgba(192, 96, 255, 0.1);
+}
+
+/* --------------------------------------------------------------------------
+   NHÃN TRẠNG THÁI
+   -------------------------------------------------------------------------- */
+.spider-status {
+  position: absolute;
+  top: 14px;
+  right: 18px;
+  z-index: 2;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  pointer-events: none;
+  user-select: none;
+}
+
+.spider-status.online {
+  color: #5affa8;
+}
+
+.spider-status.offline {
+  color: #ff5a8a;
+}
+
+/* --------------------------------------------------------------------------
+   LỚP PHỦ TẢI
+   -------------------------------------------------------------------------- */
+.spider-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(5, 5, 8, 0.8);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition-base);
+}
+
+.spider-card.loading .spider-overlay {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.spider-overlay-text {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* --------------------------------------------------------------------------
+   HIỆU ỨNG XUẤT HIỆN
+   -------------------------------------------------------------------------- */
+.spider-card {
+  animation: spider-fade-in 0.6s ease forwards;
+}
+
+@keyframes spider-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-function resetSpider() {
-  if (nodes.length === 0) return;
-  spider.index = 0;
-  spider.x = nodes[0].x;
-  spider.y = nodes[0].y;
-  spider.vx = 0;
-  spider.vy = 0;
-}
-
-function updateSpider() {
-  if (nodes.length === 0) return;
-
-  if (spider.wait > 0) {
-    spider.wait--;
-    spider.legPhase += 0.15;
-    return;
+/* --------------------------------------------------------------------------
+   ĐIỀU CHỈNH MÀN HÌNH LỚN
+   -------------------------------------------------------------------------- */
+@media (min-width: 1024px) {
+  .spider-card {
+    min-height: 560px;
   }
 
-  var target = nodes[spider.index];
-  var dx = target.x - spider.x;
-  var dy = target.y - spider.y;
-  var dist = Math.sqrt(dx * dx + dy * dy);
-
-  if (dist < 5) {
-    spider.x = target.x;
-    spider.y = target.y;
-    spider.vx = 0;
-    spider.vy = 0;
-    spider.wait = 25;
-    spider.index = (spider.index + 1) % nodes.length;
-    return;
-  }
-
-  spider.vx += (dx / dist) * spider.speed;
-  spider.vy += (dy / dist) * spider.speed;
-
-  var sp = Math.sqrt(spider.vx * spider.vx + spider.vy * spider.vy);
-  if (sp > spider.maxSpeed) {
-    spider.vx = (spider.vx / sp) * spider.maxSpeed;
-    spider.vy = (spider.vy / sp) * spider.maxSpeed;
-  }
-
-  spider.vx *= 0.96;
-  spider.vy *= 0.96;
-  spider.x += spider.vx;
-  spider.y += spider.vy;
-  spider.legPhase += 0.4 + sp * 0.1;
-}
-
-function drawSpider(c) {
-  var s = spider.size;
-  c.save();
-  c.translate(spider.x, spider.y);
-
-  var angle = Math.atan2(spider.vy, spider.vx);
-  c.rotate(angle + Math.PI / 2);
-
-  c.strokeStyle = spider.color;
-  c.lineWidth = 1.5;
-  c.lineCap = 'round';
-
-  for (var i = 0; i < 8; i++) {
-    var side = i < 4 ? -1 : 1;
-    var idx = i % 4;
-    var baseAngle = -Math.PI / 2 + side * (0.5 + idx * 0.45);
-    var swing = Math.sin(spider.legPhase + i) * 0.35;
-    var len1 = 7 * s;
-    var len2 = 9 * s;
-
-    var a1 = baseAngle + swing;
-    var x1 = Math.cos(a1) * len1;
-    var y1 = Math.sin(a1) * len1;
-
-    var a2 = a1 + side * 0.6;
-    var x2 = x1 + Math.cos(a2) * len2;
-    var y2 = y1 + Math.sin(a2) * len2;
-
-    c.beginPath();
-    c.moveTo(0, 0);
-    c.lineTo(x1, y1);
-    c.lineTo(x2, y2);
-    c.stroke();
-  }
-
-  c.fillStyle = spider.color;
-  c.beginPath();
-  c.ellipse(0, 2 * s, 3.5 * s, 4.5 * s, 0, 0, Math.PI * 2);
-  c.fill();
-
-  c.beginPath();
-  c.ellipse(0, -3.5 * s, 2.5 * s, 2.5 * s, 0, 0, Math.PI * 2);
-  c.fill();
-
-  c.fillStyle = '#ffffff';
-  c.beginPath();
-  c.arc(-1 * s, -4 * s, 0.7 * s, 0, Math.PI * 2);
-  c.arc(1 * s, -4 * s, 0.7 * s, 0, Math.PI * 2);
-  c.fill();
-
-  c.restore();
-}
-
-function drawNodes(c) {
-  for (var i = 0; i < nodes.length; i++) {
-    var n = nodes[i];
-    var isTarget = i === spider.index;
-
-    c.beginPath();
-    c.arc(n.x, n.y, n.radius, 0, Math.PI * 2);
-    c.fillStyle = isTarget
-      ? 'rgba(192, 96, 255, 0.15)'
-      : 'rgba(255, 255, 255, 0.03)';
-    c.fill();
-
-    c.strokeStyle = isTarget ? spider.color : 'rgba(255, 255, 255, 0.2)';
-    c.lineWidth = isTarget ? 2 : 1;
-    c.stroke();
-
-    c.fillStyle = isTarget ? '#ffffff' : 'rgba(255, 255, 255, 0.6)';
-    c.font = '11px Courier New';
-    c.textAlign = 'center';
-    c.textBaseline = 'middle';
-    c.fillText(n.label, n.x, n.y);
+  .spider-card canvas {
+    height: 560px;
   }
 }
 
-function loop() {
-  ctx.fillStyle = 'rgba(10, 10, 18, 0.3)';
-  ctx.fillRect(0, 0, W, H);
+/* --------------------------------------------------------------------------
+   ĐIỀU CHỈNH MÁY TÍNH BẢNG
+   -------------------------------------------------------------------------- */
+@media (max-width: 768px) {
+  .spider-card {
+    min-height: 420px;
+    border-radius: var(--radius-xl);
+  }
 
-  drawNodes(ctx);
-  updateSpider();
-  drawSpider(ctx);
+  .spider-card canvas {
+    height: 420px;
+  }
 
-  requestAnimationFrame(loop);
+  .spider-header {
+    top: 12px;
+    left: 14px;
+    font-size: var(--fs-xs);
+  }
+
+  .spider-status {
+    top: 12px;
+    right: 14px;
+    font-size: var(--fs-xs);
+  }
 }
 
-window.addEventListener('resize', resize);
-resize();
-loop();
-</script>
-</body>
-</html>
+/* --------------------------------------------------------------------------
+   ĐIỀU CHỈNH ĐIỆN THOẠI
+   -------------------------------------------------------------------------- */
+@media (max-width: 480px) {
+  .spider-card {
+    min-height: 360px;
+    border-radius: var(--radius-lg);
+  }
+
+  .spider-card canvas {
+    height: 360px;
+  }
+
+  .spider-header {
+    top: 10px;
+    left: 12px;
+    font-size: var(--fs-xs);
+    letter-spacing: 1px;
+  }
+
+  .spider-header::before {
+    width: 5px;
+    height: 5px;
+  }
+
+  .spider-status {
+    top: 10px;
+    right: 12px;
+    font-size: 10px;
+    letter-spacing: 1px;
+  }
+
+  .spider-controls {
+    gap: var(--space-sm);
+  }
+
+  .spider-controls .btn {
+    padding: var(--space-xs) var(--space-md);
+    font-size: 10px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   ĐIỀU CHỈNH ĐIỆN THOẠI NHỎ
+   -------------------------------------------------------------------------- */
+@media (max-width: 360px) {
+  .spider-card {
+    min-height: 300px;
+  }
+
+  .spider-card canvas {
+    height: 300px;
+  }
+
+  .spider-header {
+    top: 8px;
+    left: 10px;
+    font-size: 9px;
+  }
+
+  .spider-status {
+    top: 8px;
+    right: 10px;
+    font-size: 9px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   MÀN HÌNH NGANG ĐIỆN THOẠI
+   -------------------------------------------------------------------------- */
+@media (max-height: 500px) and (orientation: landscape) {
+  .spider-card {
+    min-height: 260px;
+  }
+
+  .spider-card canvas {
+    height: 260px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   CHẾ ĐỘ TƯƠNG PHẢN CAO
+   -------------------------------------------------------------------------- */
+@media (prefers-contrast: high) {
+  .spider-card {
+    border-width: 2px;
+  }
+
+  .spider-header,
+  .spider-status,
+  .spider-caption {
+    color: #ffffff;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   CHẾ ĐỘ GIẢM CHUYỂN ĐỘNG
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .spider-card,
+  .spider-header::before {
+    animation: none;
+  }
+
+  .spider-card canvas {
+    /* Canvas tự xử lý chuyển động bằng JS */
+  }
+}
+
+/* --------------------------------------------------------------------------
+   CHẾ ĐỘ IN ẤN
+   -------------------------------------------------------------------------- */
+@media print {
+  .spider-card {
+    display: none;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   HỖ TRỢ VÙNG AN TOÀN
+   -------------------------------------------------------------------------- */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .spider-header {
+    top: max(14px, env(safe-area-inset-top));
+    left: max(18px, env(safe-area-inset-left));
+  }
+
+  .spider-status {
+    top: max(14px, env(safe-area-inset-top));
+    right: max(18px, env(safe-area-inset-right));
+  }
+}
