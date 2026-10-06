@@ -1,0 +1,231 @@
+/* ==========================================================================
+   KHỐI KẾT NỐI
+   Định nghĩa tiêu đề kết nối và danh sách liên kết Telegram, Zalo
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   KHUNG KẾT NỐI
+   -------------------------------------------------------------------------- */
+.connect-card {
+  text-align: center;
+  padding: var(--space-xl);
+}
+
+/* --------------------------------------------------------------------------
+   TIÊU ĐỀ KẾT NỐI
+   -------------------------------------------------------------------------- */
+.connect-title {
+  font-size: var(--fs-base);
+  letter-spacing: 6px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  position: relative;
+  display: inline-block;
+  padding: 0 var(--space-base);
+  font-family: var(--font-mono);
+  user-select: none;
+}
+
+.connect-title::before,
+.connect-title::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 40px;
+  height: 1px;
+  background: var(--border);
+}
+
+.connect-title::before { left: -40px; }
+.connect-title::after { right: -40px; }
+
+/* --------------------------------------------------------------------------
+   DANH SÁCH LIÊN KẾT
+   -------------------------------------------------------------------------- */
+.connect-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  margin-top: var(--space-lg);
+  width: 100%;
+}
+
+/* --------------------------------------------------------------------------
+   LIÊN KẾT KẾT NỐI
+   -------------------------------------------------------------------------- */
+.connect-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-md) var(--space-base);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  text-decoration: none;
+  color: var(--text);
+  font-size: var(--fs-base);
+  letter-spacing: 1px;
+  position: relative;
+  overflow: hidden;
+  transition: color var(--transition-base),
+              border-color var(--transition-base),
+              background var(--transition-base),
+              transform var(--transition-fast);
+}
+
+.connect-link::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.04),
+    transparent
+  );
+  transition: left var(--transition-slow);
+}
+
+.connect-link:hover {
+  color: var(--text-strong);
+  border-color: var(--text-strong);
+  background: rgba(255, 255, 255, 0.04);
+  transform: translateY(-1px);
+}
+
+.connect-link:hover::before {
+  left: 100%;
+}
+
+.connect-link:active {
+  transform: translateY(0) scale(0.99);
+}
+
+.connect-link:focus-visible {
+  outline: 1px solid var(--text-strong);
+  outline-offset: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   NHÃN LIÊN KẾT
+   -------------------------------------------------------------------------- */
+.connect-label {
+  color: var(--text-muted);
+  text-transform: uppercase;
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  letter-spacing: 2px;
+  transition: color var(--transition-base);
+}
+
+.connect-link:hover .connect-label {
+  color: var(--text-strong);
+}
+
+/* --------------------------------------------------------------------------
+   GIÁ TRỊ LIÊN KẾT
+   -------------------------------------------------------------------------- */
+.connect-value {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  color: var(--text);
+  transition: color var(--transition-base);
+}
+
+.connect-link:hover .connect-value {
+  color: var(--text-strong);
+}
+
+/* --------------------------------------------------------------------------
+   BIỂU TƯỢNG LIÊN KẾT
+   -------------------------------------------------------------------------- */
+.connect-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  opacity: var(--opacity-soft);
+  transition: opacity var(--transition-base);
+}
+
+.connect-link:hover .connect-icon {
+  opacity: var(--opacity-full);
+}
+
+/* --------------------------------------------------------------------------
+   HIỆU ỨNG XUẤT HIỆN
+   -------------------------------------------------------------------------- */
+.connect-card {
+  animation: connect-fade-in 0.6s ease forwards;
+}
+
+@keyframes connect-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   ĐIỀU CHỈNH MÀN HÌNH NHỎ
+   -------------------------------------------------------------------------- */
+@media (max-width: 420px) {
+  .connect-card {
+    padding: var(--space-lg);
+  }
+
+  .connect-title {
+    font-size: var(--fs-sm);
+    letter-spacing: 4px;
+  }
+
+  .connect-title::before,
+  .connect-title::after {
+    width: 20px;
+  }
+
+  .connect-title::before { left: -20px; }
+  .connect-title::after { right: -20px; }
+
+  .connect-link {
+    padding: var(--space-md);
+    font-size: var(--fs-sm);
+  }
+
+  .connect-label,
+  .connect-value {
+    font-size: var(--fs-xs);
+    letter-spacing: 1px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   CHẾ ĐỘ TƯƠNG PHẢN CAO
+   -------------------------------------------------------------------------- */
+@media (prefers-contrast: high) {
+  .connect-link {
+    border-color: #ffffff;
+  }
+
+  .connect-label,
+  .connect-value {
+    color: #ffffff;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   CHẾ ĐỘ GIẢM CHUYỂN ĐỘNG
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .connect-card,
+  .connect-link,
+  .connect-link::before {
+    animation: none;
+    transition: none;
+  }
+}
