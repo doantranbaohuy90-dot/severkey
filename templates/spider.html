@@ -1,31 +1,53 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Con nhện chạy trên code</title>
+<style>
+  /* Loại bỏ mặc định trình duyệt */
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
 
-{% block title %}Con nhện chạy trên code{% endblock %}
+  /* Nền tối toàn màn hình */
+  html, body {
+    width: 100%;
+    height: 100%;
+    background: #0a0a12;
+    overflow: hidden;
+    font-family: 'Courier New', monospace;
+  }
 
-{% block content %}
-  <!-- Khung chứa canvas con nhện -->
-  <section class="card spider-card">
-    <canvas id="spider-canvas"></canvas>
-  </section>
-{% endblock %}
-
-{% block scripts %}
+  /* Canvas chiếm toàn bộ màn hình */
+  #spider-canvas {
+    display: block;
+    width: 100vw;
+    height: 100vh;
+    cursor: crosshair;
+  }
+</style>
+</head>
+<body>
+<canvas id="spider-canvas"></canvas>
 <script>
 // Lấy canvas và context
 const canvas = document.getElementById('spider-canvas');
 const ctx = canvas.getContext('2d');
 
 // Biến kích thước
-let W, H;
+let W = 0;
+let H = 0;
 
-// Hàm cập nhật kích thước canvas theo khung chứa
+// Hàm cập nhật kích thước
 function resize() {
-  const rect = canvas.parentElement.getBoundingClientRect();
-  W = canvas.width = rect.width;
-  H = canvas.height = 420;
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
   buildNodes();
+  spider.reset();
 }
-window.addEventListener('resize', resize);
 
 // Danh sách nút lệnh theo studio.prompt trong ảnh
 const NODE_DATA = [
@@ -63,14 +85,17 @@ const NODE_DATA = [
 
 let nodes = [];
 
-// Hàm tính vị trí các node theo bố cục lưới
+// Tính vị trí các node theo bố cục lưới
 function buildNodes() {
   nodes = [];
-  const paddingX = 100;
-  const paddingY = 55;
+  if (W <= 0 || H <= 0) return;
+
+  const paddingX = 120;
+  const paddingY = 65;
   const cols = Math.max(2, Math.floor(W / paddingX));
+  const rows = Math.ceil(NODE_DATA.length / cols);
   const offsetX = (W - (cols - 1) * paddingX) / 2;
-  const offsetY = 50;
+  const offsetY = (H - (rows - 1) * paddingY) / 2;
 
   NODE_DATA.forEach((item, i) => {
     const col = i % cols;
@@ -79,12 +104,12 @@ function buildNodes() {
       ...item,
       x: offsetX + col * paddingX,
       y: offsetY + row * paddingY,
-      radius: 22,
+      radius: 26,
     });
   });
 }
 
-// Lớp con nhện chạy theo danh sách node
+// Lớp con nhện
 class Spider {
   constructor() {
     this.nodeIndex = 0;
@@ -93,10 +118,10 @@ class Spider {
     this.vx = 0;
     this.vy = 0;
     this.legPhase = 0;
-    this.size = 1.8;
+    this.size = 2;
     this.color = '#c060ff';
     this.speed = 0.15;
-    this.maxSpeed = 5;
+    this.maxSpeed = 6;
     this.waitTimer = 0;
   }
 
@@ -110,12 +135,14 @@ class Spider {
   }
 
   update() {
+    if (nodes.length === 0) return;
+
     if (this.waitTimer > 0) {
       this.waitTimer--;
       this.legPhase += 0.15;
       return;
     }
-    if (nodes.length === 0) return;
+
     const target = nodes[this.nodeIndex];
     const dx = target.x - this.x;
     const dy = target.y - this.y;
@@ -126,7 +153,7 @@ class Spider {
       this.y = target.y;
       this.vx = 0;
       this.vy = 0;
-      this.waitTimer = 20;
+      this.waitTimer = 25;
       this.nodeIndex = (this.nodeIndex + 1) % nodes.length;
       return;
     }
@@ -147,17 +174,17 @@ class Spider {
     this.legPhase += 0.4 + sp * 0.1;
   }
 
-  draw(ctx) {
+  draw(c) {
     const s = this.size;
-    ctx.save();
-    ctx.translate(this.x, this.y);
+    c.save();
+    c.translate(this.x, this.y);
 
     const angle = Math.atan2(this.vy, this.vx);
-    ctx.rotate(angle + Math.PI / 2);
+    c.rotate(angle + Math.PI / 2);
 
-    ctx.strokeStyle = this.color;
-    ctx.lineWidth = 1.5;
-    ctx.lineCap = 'round';
+    c.strokeStyle = this.color;
+    c.lineWidth = 1.5;
+    c.lineCap = 'round';
     for (let i = 0; i < 8; i++) {
       const side = i < 4 ? -1 : 1;
       const idx = i % 4;
@@ -174,40 +201,41 @@ class Spider {
       const x2 = x1 + Math.cos(a2) * len2;
       const y2 = y1 + Math.sin(a2) * len2;
 
-      ctx.beginPath();
-      ctx.moveTo(0, 0);
-      ctx.lineTo(x1, y1);
-      ctx.lineTo(x2, y2);
-      ctx.stroke();
+      c.beginPath();
+      c.moveTo(0, 0);
+      c.lineTo(x1, y1);
+      c.lineTo(x2, y2);
+      c.stroke();
     }
 
-    ctx.fillStyle = this.color;
-    ctx.beginPath();
-    ctx.ellipse(0, 2 * s, 3.5 * s, 4.5 * s, 0, 0, Math.PI * 2);
-    ctx.fill();
+    c.fillStyle = this.color;
+    c.beginPath();
+    c.ellipse(0, 2 * s, 3.5 * s, 4.5 * s, 0, 0, Math.PI * 2);
+    c.fill();
 
-    ctx.beginPath();
-    ctx.ellipse(0, -3.5 * s, 2.5 * s, 2.5 * s, 0, 0, Math.PI * 2);
-    ctx.fill();
+    c.beginPath();
+    c.ellipse(0, -3.5 * s, 2.5 * s, 2.5 * s, 0, 0, Math.PI * 2);
+    c.fill();
 
-    ctx.fillStyle = '#fff';
-    ctx.beginPath();
-    ctx.arc(-1 * s, -4 * s, 0.7 * s, 0, Math.PI * 2);
-    ctx.arc(1 * s, -4 * s, 0.7 * s, 0, Math.PI * 2);
-    ctx.fill();
+    c.fillStyle = '#fff';
+    c.beginPath();
+    c.arc(-1 * s, -4 * s, 0.7 * s, 0, Math.PI * 2);
+    c.arc(1 * s, -4 * s, 0.7 * s, 0, Math.PI * 2);
+    c.fill();
 
-    ctx.restore();
+    c.restore();
   }
 }
 
 const spider = new Spider();
-resize();
-spider.reset();
 
+// Vòng lặp render
 function loop() {
+  // Vệt mờ tạo hiệu ứng chuyển động
   ctx.fillStyle = 'rgba(10, 10, 18, 0.3)';
   ctx.fillRect(0, 0, W, H);
 
+  // Vẽ các node lệnh
   for (let i = 0; i < nodes.length; i++) {
     const n = nodes[i];
     const isTarget = i === spider.nodeIndex;
@@ -224,16 +252,25 @@ function loop() {
     ctx.stroke();
 
     ctx.fillStyle = isTarget ? '#fff' : 'rgba(255, 255, 255, 0.6)';
-    ctx.font = '9px Courier New';
+    ctx.font = '10px Courier New';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(n.label, n.x, n.y);
   }
 
+  // Cập nhật và vẽ nhện
   spider.update();
   spider.draw(ctx);
+
   requestAnimationFrame(loop);
 }
+
+// Lắng nghe sự kiện resize
+window.addEventListener('resize', resize);
+
+// Khởi tạo
+resize();
 loop();
 </script>
-{% endblock %}
+</body>
+</html>
