@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="{{ locale|default('vi') }}">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Hồ sơ cá nhân của Doãn Trần Bảo Huy">
+<meta name="author" content="Doãn Trần Bảo Huy">
+<meta name="theme-color" content="#0a0a0a">
+<title>{% block title %}Hồ sơ của tôi{% endblock %}</title>
+
+<!-- Liên kết tệp CSS -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/reset.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/variables.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/layout.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/clock.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/intro.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/connect.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/responsive.css') }}">
+</head>
+<body>
+
+  <!-- Khối nội dung chính -->
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Khối chân trang -->
+  <footer class="footer">
+    <span>© 2026 Doãn Trần Bảo Huy</span>
+  </footer>
+
+<!-- Liên kết tệp JS -->
+<script src="{{ url_for('static', filename='js/config.js') }}"></script>
+<script src="{{ url_for('static', filename='js/utils.js') }}"></script>
+<script src="{{ url_for('static', filename='js/api.js') }}"></script>
+<script src="{{ url_for('static', filename='js/clock.js') }}"></script>
+<script src="{{ url_for('static', filename='js/cursor.js') }}"></script>
+<script src="{{ url_for('static', filename='js/ui.js') }}"></script>
+<script src="{{ url_for('static', filename='js/events.js') }}"></script>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>
