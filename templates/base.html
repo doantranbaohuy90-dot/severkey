@@ -2,42 +2,597 @@
 <html lang="{{ locale|default('vi') }}">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <meta name="description" content="Hồ sơ cá nhân của Doãn Trần Bảo Huy">
 <meta name="author" content="Doãn Trần Bảo Huy">
 <meta name="theme-color" content="#0a0a0a">
 <title>{% block title %}Hồ sơ của tôi{% endblock %}</title>
 
-<!-- Liên kết tệp CSS -->
-<link rel="stylesheet" href="{{ url_for('static', filename='css/reset.css') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/variables.css') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/layout.css') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/clock.css') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/intro.css') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/connect.css') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/responsive.css') }}">
+{% set v = "20261006" %}
+
+<link rel="stylesheet" href="{{ url_for('static', filename='css/reset.css') }}?v={{ v }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/variables.css') }}?v={{ v }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/layout.css') }}?v={{ v }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/clock.css') }}?v={{ v }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/intro.css') }}?v={{ v }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/connect.css') }}?v={{ v }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/error.css') }}?v={{ v }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/spider.css') }}?v={{ v }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/responsive.css') }}?v={{ v }}">
+
+<style>
+  /* Nền canvas nhện toàn màn hình */
+  #bg-spider {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 0;
+    pointer-events: none;
+    background: transparent;
+  }
+
+  /* Đẩy nội dung lên trên canvas */
+  body > .nav,
+  body > .container,
+  body > .footer {
+    position: relative;
+    z-index: 2;
+  }
+</style>
 </head>
 <body>
 
-  <!-- Khối nội dung chính -->
-  <main class="container">
-    {% block content %}{% endblock %}
-  </main>
+<!-- Canvas nền con nhện -->
+<canvas id="bg-spider"></canvas>
 
-  <!-- Khối chân trang -->
-  <footer class="footer">
-    <span>© 2026 Doãn Trần Bảo Huy</span>
-  </footer>
+<nav class="nav">
+  <a class="nav-link" href="{{ url_for('index') }}">Hồ sơ</a>
+  <a class="nav-link" href="{{ url_for('spider') }}">Nhện chạy</a>
+</nav>
 
-<!-- Liên kết tệp JS -->
-<script src="{{ url_for('static', filename='js/config.js') }}"></script>
-<script src="{{ url_for('static', filename='js/utils.js') }}"></script>
-<script src="{{ url_for('static', filename='js/api.js') }}"></script>
-<script src="{{ url_for('static', filename='js/clock.js') }}"></script>
-<script src="{{ url_for('static', filename='js/cursor.js') }}"></script>
-<script src="{{ url_for('static', filename='js/ui.js') }}"></script>
-<script src="{{ url_for('static', filename='js/events.js') }}"></script>
-<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<main class="container">
+  {% block content %}{% endblock %}
+</main>
+
+<footer class="footer">
+  <span>© 2026 Doãn Trần Bảo Huy</span>
+</footer>
+
+<!-- ======================================================================
+     ENGINE CON NHỆN INLINE
+     Chạy nền mọi trang, không phụ thuộc tệp JS ngoài
+     ====================================================================== -->
+<script>
+(function () {
+  'use strict';
+
+  // Chờ DOM sẵn sàng
+  function ready(fn) {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', fn);
+    } else {
+      fn();
+    }
+  }
+
+  ready(function () {
+
+    // ================================================================
+    // LẤY CANVAS
+    // ================================================================
+    var canvas = document.getElementById('bg-spider');
+    if (!canvas) {
+      console.warn('[Spider] Không tìm thấy canvas');
+      return;
+    }
+    var ctx = canvas.getContext('2d');
+
+    // ================================================================
+    // BIẾN KÍCH THƯỚC
+    // ================================================================
+    var W = 0, H = 0;
+    var DPR = window.devicePixelRatio || 1;
+
+    // ================================================================
+    // CHUỘT
+    // ================================================================
+    var mouseX = -1000, mouseY = -1000, mouseActive = false;
+
+    // ================================================================
+    // DANH SÁCH NHÃN THEO STUDIO.PROMPT
+    // ================================================================
+    var LABELS = [
+      'staff hired', 'source packet', 'clear object', 'drafts',
+      'role', 'objective', 'ship', 'one', 'manual run', 'start',
+      'result', 'repeat', 'use only', 'actually', 'provided',
+      'brand', 'fact sheet', 'transcript', 'saved', 'feedback',
+      'next', 'approve', 'publishing', 'external', 'context',
+      'researcher', 'writer', 'producer', 'editor', 'publisher'
+    ];
+
+    var COLORS = [
+      '#ff5a8a', '#ff8a5a', '#ffd75a', '#a8ff5a', '#5affa8',
+      '#5ad7ff', '#5a8aff', '#a85aff', '#ff5ad7', '#ff5a5a'
+    ];
+
+    // ================================================================
+    // MẢNG NODE
+    // ================================================================
+    var nodes = [];
+
+    // ================================================================
+    // NHỆN CHÍNH
+    // ================================================================
+    var spider = {
+      index: 0,
+      x: 0, y: 0,
+      vx: 0, vy: 0,
+      angle: 0,
+      targetAngle: 0,
+      legPhase: 0,
+      wait: 0,
+      size: 2.0,
+      color: '#c060ff',
+      speed: 0.35,
+      maxSpeed: 8,
+      trail: []
+    };
+
+    // ================================================================
+    // NHỆN CON
+    // ================================================================
+    var babies = [];
+
+    // ================================================================
+    // HẠT
+    // ================================================================
+    var particles = [];
+
+    // ================================================================
+    // CẬP NHẬT KÍCH THƯỚC
+    // ================================================================
+    function resize() {
+      W = window.innerWidth;
+      H = window.innerHeight;
+      canvas.width = W * DPR;
+      canvas.height = H * DPR;
+      canvas.style.width = W + 'px';
+      canvas.style.height = H + 'px';
+      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+
+      buildNodes();
+      resetSpider();
+      buildBabies();
+    }
+
+    // ================================================================
+    // XÂY DỰNG NODE
+    // ================================================================
+    function buildNodes() {
+      nodes = [];
+      if (W <= 0 || H <= 0) return;
+
+      var paddingX = Math.max(90, W / 7);
+      var paddingY = Math.max(50, H / 9);
+      var cols = Math.max(2, Math.floor(W / paddingX));
+      var rows = Math.ceil(LABELS.length / cols);
+      var offsetX = (W - (cols - 1) * paddingX) / 2;
+      var offsetY = (H - (rows - 1) * paddingY) / 2;
+
+      for (var i = 0; i < LABELS.length; i++) {
+        var col = i % cols;
+        var row = Math.floor(i / cols);
+        nodes.push({
+          label: LABELS[i],
+          color: COLORS[i % COLORS.length],
+          radius: 24,
+          x: offsetX + col * paddingX,
+          y: offsetY + row * paddingY,
+          pulse: Math.random() * Math.PI * 2,
+          delay: 15 + Math.floor(Math.random() * 15)
+        });
+      }
+    }
+
+    // ================================================================
+    // ĐẶT LẠI NHỆN
+    // ================================================================
+    function resetSpider() {
+      if (nodes.length === 0) return;
+      spider.index = 0;
+      spider.x = nodes[0].x;
+      spider.y = nodes[0].y;
+      spider.vx = 0;
+      spider.vy = 0;
+      spider.trail = [];
+    }
+
+    // ================================================================
+    // TẠO NHỆN CON
+    // ================================================================
+    function buildBabies() {
+      babies = [];
+      for (var i = 0; i < 5; i++) {
+        babies.push({
+          x: Math.random() * W,
+          y: Math.random() * H,
+          vx: 0, vy: 0,
+          legPhase: Math.random() * Math.PI * 2,
+          size: 0.9 + Math.random() * 0.4,
+          color: COLORS[i % COLORS.length],
+          angle: 0,
+          wander: Math.random() * Math.PI * 2
+        });
+      }
+    }
+
+    // ================================================================
+    // SINH HẠT
+    // ================================================================
+    function spawnParticles(x, y, color) {
+      for (var i = 0; i < 10; i++) {
+        var a = Math.random() * Math.PI * 2;
+        var sp = 1 + Math.random() * 3;
+        particles.push({
+          x: x, y: y,
+          vx: Math.cos(a) * sp,
+          vy: Math.sin(a) * sp,
+          life: 1,
+          color: color,
+          size: 1 + Math.random() * 2
+        });
+      }
+    }
+
+    // ================================================================
+    // CẬP NHẬT HẠT
+    // ================================================================
+    function updateParticles() {
+      for (var i = particles.length - 1; i >= 0; i--) {
+        var p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vx *= 0.95;
+        p.vy *= 0.95;
+        p.life -= 0.02;
+        if (p.life <= 0) particles.splice(i, 1);
+      }
+    }
+
+    // ================================================================
+    // CẬP NHẬT NHỆN CHÍNH
+    // ================================================================
+    function updateSpider() {
+      if (nodes.length === 0) return;
+
+      // Trốn chuột
+      if (mouseActive) {
+        var mdx = spider.x - mouseX;
+        var mdy = spider.y - mouseY;
+        var md = Math.sqrt(mdx * mdx + mdy * mdy);
+        if (md < 140 && md > 0.1) {
+          spider.vx += (mdx / md) * 0.6;
+          spider.vy += (mdy / md) * 0.6;
+        }
+      }
+
+      if (spider.wait > 0) {
+        spider.wait--;
+        spider.legPhase += 0.2;
+        return;
+      }
+
+      var t = nodes[spider.index];
+      var dx = t.x - spider.x;
+      var dy = t.y - spider.y;
+      var dist = Math.sqrt(dx * dx + dy * dy);
+
+      if (dist < 6) {
+        spider.x = t.x;
+        spider.y = t.y;
+        spider.vx = 0;
+        spider.vy = 0;
+        spider.wait = t.delay;
+        spider.color = t.color;
+        spawnParticles(spider.x, spider.y, t.color);
+        spider.index = (spider.index + 1) % nodes.length;
+        return;
+      }
+
+      spider.vx += (dx / dist) * spider.speed;
+      spider.vy += (dy / dist) * spider.speed;
+
+      var sp = Math.sqrt(spider.vx * spider.vx + spider.vy * spider.vy);
+      if (sp > spider.maxSpeed) {
+        spider.vx = (spider.vx / sp) * spider.maxSpeed;
+        spider.vy = (spider.vy / sp) * spider.maxSpeed;
+      }
+
+      spider.vx *= 0.94;
+      spider.vy *= 0.94;
+      spider.x += spider.vx;
+      spider.y += spider.vy;
+
+      if (sp > 0.5) {
+        spider.targetAngle = Math.atan2(spider.vy, spider.vx);
+      }
+      var da = spider.targetAngle - spider.angle;
+      while (da > Math.PI) da -= Math.PI * 2;
+      while (da < -Math.PI) da += Math.PI * 2;
+      spider.angle += da * 0.2;
+
+      spider.legPhase += 0.4 + sp * 0.15;
+
+      spider.trail.push({ x: spider.x, y: spider.y, life: 1 });
+      if (spider.trail.length > 25) spider.trail.shift();
+      for (var i = 0; i < spider.trail.length; i++) {
+        spider.trail[i].life -= 0.05;
+      }
+    }
+
+    // ================================================================
+    // CẬP NHẬT NHỆN CON
+    // ================================================================
+    function updateBabies() {
+      for (var i = 0; i < babies.length; i++) {
+        var b = babies[i];
+        b.wander += (Math.random() - 0.5) * 0.3;
+        b.vx += Math.cos(b.wander) * 0.1;
+        b.vy += Math.sin(b.wander) * 0.1;
+
+        var dx = b.x - spider.x;
+        var dy = b.y - spider.y;
+        var d = Math.sqrt(dx * dx + dy * dy);
+        if (d < 90 && d > 0.1) {
+          b.vx += (dx / d) * 0.3;
+          b.vy += (dy / d) * 0.3;
+        }
+
+        b.vx *= 0.92;
+        b.vy *= 0.92;
+        b.x += b.vx;
+        b.y += b.vy;
+
+        if (b.x < 20) b.vx += 0.5;
+        if (b.x > W - 20) b.vx -= 0.5;
+        if (b.y < 20) b.vy += 0.5;
+        if (b.y > H - 20) b.vy -= 0.5;
+
+        if (Math.abs(b.vx) + Math.abs(b.vy) > 1) {
+          b.angle = Math.atan2(b.vy, b.vx);
+        }
+        b.legPhase += 0.5;
+      }
+    }
+
+    // ================================================================
+    // VẼ THÂN NHỆN
+    // ================================================================
+    function drawBody(c, s, color, angle, legPhase, glow) {
+      c.save();
+      c.rotate(angle + Math.PI / 2);
+
+      if (glow) {
+        c.shadowColor = color;
+        c.shadowBlur = 12 * s;
+      }
+
+      // 8 chân
+      c.strokeStyle = color;
+      c.lineWidth = 1.4 * s;
+      c.lineCap = 'round';
+      for (var i = 0; i < 8; i++) {
+        var side = i < 4 ? -1 : 1;
+        var idx = i % 4;
+        var baseAngle = -Math.PI / 2 + side * (0.5 + idx * 0.45);
+        var swing = Math.sin(legPhase + i) * 0.4;
+        var len1 = 7 * s;
+        var len2 = 9 * s;
+
+        var a1 = baseAngle + swing;
+        var x1 = Math.cos(a1) * len1;
+        var y1 = Math.sin(a1) * len1;
+
+        var a2 = a1 + side * 0.6;
+        var x2 = x1 + Math.cos(a2) * len2;
+        var y2 = y1 + Math.sin(a2) * len2;
+
+        c.beginPath();
+        c.moveTo(0, 0);
+        c.lineTo(x1, y1);
+        c.lineTo(x2, y2);
+        c.stroke();
+      }
+
+      // Bụng
+      c.fillStyle = color;
+      c.beginPath();
+      c.ellipse(0, 2 * s, 3.5 * s, 4.5 * s, 0, 0, Math.PI * 2);
+      c.fill();
+
+      // Đầu ngực
+      c.beginPath();
+      c.ellipse(0, -3.5 * s, 2.5 * s, 2.5 * s, 0, 0, Math.PI * 2);
+      c.fill();
+
+      // Mắt
+      c.shadowBlur = 0;
+      c.fillStyle = '#ffffff';
+      c.beginPath();
+      c.arc(-1 * s, -4 * s, 0.7 * s, 0, Math.PI * 2);
+      c.arc(1 * s, -4 * s, 0.7 * s, 0, Math.PI * 2);
+      c.fill();
+
+      c.fillStyle = color;
+      c.beginPath();
+      c.arc(-1 * s, -4 * s, 0.35 * s, 0, Math.PI * 2);
+      c.arc(1 * s, -4 * s, 0.35 * s, 0, Math.PI * 2);
+      c.fill();
+
+      c.restore();
+    }
+
+    // ================================================================
+    // VẼ NHỆN CHÍNH
+    // ================================================================
+    function drawSpider(c) {
+      c.save();
+      c.translate(spider.x, spider.y);
+      drawBody(c, spider.size, spider.color, spider.angle, spider.legPhase, true);
+      c.restore();
+    }
+
+    // ================================================================
+    // VẼ NHỆN CON
+    // ================================================================
+    function drawBabies(c) {
+      for (var i = 0; i < babies.length; i++) {
+        var b = babies[i];
+        c.save();
+        c.translate(b.x, b.y);
+        c.globalAlpha = 0.6;
+        drawBody(c, b.size, b.color, b.angle, b.legPhase, false);
+        c.restore();
+      }
+      c.globalAlpha = 1;
+    }
+
+    // ================================================================
+    // VẼ VỆT
+    // ================================================================
+    function drawTrail(c) {
+      for (var i = 0; i < spider.trail.length; i++) {
+        var t = spider.trail[i];
+        if (t.life <= 0) continue;
+        c.globalAlpha = t.life * 0.3;
+        c.fillStyle = spider.color;
+        c.beginPath();
+        c.arc(t.x, t.y, spider.size * t.life, 0, Math.PI * 2);
+        c.fill();
+      }
+      c.globalAlpha = 1;
+    }
+
+    // ================================================================
+    // VẼ HẠT
+    // ================================================================
+    function drawParticles(c) {
+      for (var i = 0; i < particles.length; i++) {
+        var p = particles[i];
+        c.globalAlpha = p.life;
+        c.fillStyle = p.color;
+        c.beginPath();
+        c.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        c.fill();
+      }
+      c.globalAlpha = 1;
+    }
+
+    // ================================================================
+    // VẼ NODE
+    // ================================================================
+    function drawNodes(c, time) {
+      for (var i = 0; i < nodes.length; i++) {
+        var n = nodes[i];
+        var isTarget = i === spider.index;
+        var pulse = 1 + Math.sin(time * 0.003 + n.pulse) * 0.1;
+
+        if (isTarget) {
+          c.beginPath();
+          c.arc(n.x, n.y, n.radius * pulse * 1.4, 0, Math.PI * 2);
+          c.strokeStyle = n.color;
+          c.globalAlpha = 0.25;
+          c.lineWidth = 1;
+          c.stroke();
+          c.globalAlpha = 1;
+        }
+
+        c.beginPath();
+        c.arc(n.x, n.y, n.radius * pulse, 0, Math.PI * 2);
+        c.fillStyle = isTarget
+          ? 'rgba(192, 96, 255, 0.12)'
+          : 'rgba(255, 255, 255, 0.02)';
+        c.fill();
+
+        c.strokeStyle = isTarget ? n.color : 'rgba(255, 255, 255, 0.12)';
+        c.lineWidth = isTarget ? 1.5 : 1;
+        c.stroke();
+
+        c.fillStyle = isTarget ? '#ffffff' : 'rgba(255, 255, 255, 0.45)';
+        c.font = '10px Courier New';
+        c.textAlign = 'center';
+        c.textBaseline = 'middle';
+        c.fillText(n.label, n.x, n.y);
+      }
+    }
+
+    // ================================================================
+    // VÒNG LẶP RENDER
+    // ================================================================
+    var startTime = performance.now();
+    function loop(now) {
+      var t = now - startTime;
+
+      // Vệt mờ
+      ctx.fillStyle = 'rgba(10, 10, 18, 0.15)';
+      ctx.fillRect(0, 0, W, H);
+
+      drawNodes(ctx, t);
+      drawTrail(ctx);
+      updateSpider();
+      drawSpider(ctx);
+
+      updateBabies();
+      drawBabies(ctx);
+
+      updateParticles();
+      drawParticles(ctx);
+
+      requestAnimationFrame(loop);
+    }
+
+    // ================================================================
+    // SỰ KIỆN
+    // ================================================================
+    window.addEventListener('resize', resize);
+
+    window.addEventListener('mousemove', function (e) {
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+      mouseActive = true;
+    });
+
+    window.addEventListener('mouseleave', function () {
+      mouseActive = false;
+    });
+
+    window.addEventListener('touchmove', function (e) {
+      if (e.touches.length > 0) {
+        mouseX = e.touches[0].clientX;
+        mouseY = e.touches[0].clientY;
+        mouseActive = true;
+      }
+    }, { passive: true });
+
+    window.addEventListener('touchend', function () {
+      mouseActive = false;
+    });
+
+    // ================================================================
+    // KHỞI TẠO
+    // ================================================================
+    resize();
+    requestAnimationFrame(loop);
+
+    console.log('[Spider] Đã khởi động nền');
+  });
+})();
+</script>
+
 {% block scripts %}{% endblock %}
 </body>
 </html>
