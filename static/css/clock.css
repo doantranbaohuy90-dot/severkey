@@ -1,0 +1,171 @@
+/* ==========================================================================
+   KHỐI ĐỒNG HỒ
+   Định nghĩa hiển thị giờ, phút, giây, AM/PM và ngày tháng
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   KHUNG ĐỒNG HỒ
+   -------------------------------------------------------------------------- */
+.clock-card {
+  text-align: center;
+  padding: var(--space-2xl) var(--space-xl);
+}
+
+/* --------------------------------------------------------------------------
+   NHÓM GIỜ VÀ PHÚT
+   -------------------------------------------------------------------------- */
+.clock-time {
+  font-size: var(--fs-5xl);
+  font-weight: var(--fw-normal);
+  line-height: 1;
+  letter-spacing: -2px;
+  color: var(--text-strong);
+  display: inline-flex;
+  align-items: flex-start;
+  justify-content: center;
+  font-family: var(--font-main);
+  user-select: none;
+}
+
+/* --------------------------------------------------------------------------
+   GIÂY
+   -------------------------------------------------------------------------- */
+.clock-seconds {
+  font-size: var(--fs-xl);
+  color: var(--text-muted);
+  margin-left: var(--space-xs);
+  margin-top: var(--space-sm);
+  font-family: var(--font-main);
+  transition: color var(--transition-base);
+}
+
+/* --------------------------------------------------------------------------
+   AM / PM
+   -------------------------------------------------------------------------- */
+.clock-ampm {
+  font-size: var(--fs-lg);
+  color: var(--text-muted);
+  display: block;
+  text-align: right;
+  margin-top: -4px;
+  letter-spacing: 1px;
+  font-family: var(--font-main);
+  user-select: none;
+}
+
+/* --------------------------------------------------------------------------
+   NGÀY THÁNG
+   -------------------------------------------------------------------------- */
+.clock-date {
+  margin-top: var(--space-base);
+  font-size: var(--fs-base);
+  letter-spacing: 3px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  user-select: none;
+}
+
+/* --------------------------------------------------------------------------
+   DẤU PHÂN CÁCH NHẤP NHÁY
+   -------------------------------------------------------------------------- */
+.clock-time .separator {
+  display: inline-block;
+  animation: clock-blink 1s step-end infinite;
+}
+
+@keyframes clock-blink {
+  50% { opacity: 0; }
+}
+
+/* --------------------------------------------------------------------------
+   HIỆU ỨNG XUẤT HIỆN
+   -------------------------------------------------------------------------- */
+.clock-card {
+  animation: clock-fade-in 0.6s ease forwards;
+}
+
+@keyframes clock-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   TRẠNG THÁI TẢI
+   -------------------------------------------------------------------------- */
+.clock-card.loading .clock-time,
+.clock-card.loading .clock-seconds,
+.clock-card.loading .clock-ampm,
+.clock-card.loading .clock-date {
+  opacity: var(--opacity-dim);
+}
+
+/* --------------------------------------------------------------------------
+   ĐIỀU CHỈNH MÀN HÌNH NHỎ
+   -------------------------------------------------------------------------- */
+@media (max-width: 420px) {
+  .clock-time {
+    font-size: var(--fs-4xl);
+    letter-spacing: -1px;
+  }
+
+  .clock-seconds {
+    font-size: var(--fs-lg);
+    margin-top: var(--space-xs);
+  }
+
+  .clock-ampm {
+    font-size: var(--fs-md);
+  }
+
+  .clock-date {
+    font-size: var(--fs-sm);
+    letter-spacing: 2px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   ĐIỀU CHỈNH MÀN HÌNH RẤT NHỎ
+   -------------------------------------------------------------------------- */
+@media (max-width: 320px) {
+  .clock-time {
+    font-size: 36px;
+  }
+
+  .clock-seconds {
+    font-size: var(--fs-md);
+  }
+
+  .clock-date {
+    font-size: var(--fs-xs);
+    letter-spacing: 1px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   CHẾ ĐỘ TƯƠNG PHẢN CAO
+   -------------------------------------------------------------------------- */
+@media (prefers-contrast: high) {
+  .clock-time,
+  .clock-seconds,
+  .clock-ampm,
+  .clock-date {
+    color: #ffffff;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   CHẾ ĐỘ GIẢM CHUYỂN ĐỘNG
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .clock-card,
+  .clock-time .separator {
+    animation: none;
+  }
+}
