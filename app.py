@@ -2,7 +2,7 @@
 import os
 import logging
 from datetime import datetime
-from flask import Flask, render_template, jsonify, request, abort
+from flask import Flask, render_template, jsonify, request
 from dotenv import load_dotenv
 
 # Nạp biến môi trường từ tệp .env
@@ -10,7 +10,7 @@ load_dotenv()
 
 # Khởi tạo logger
 logging.basicConfig(
-    level=logging.INFO,
+    level=os.environ.get("LOG_LEVEL", "INFO"),
     format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
 )
 logger = logging.getLogger(__name__)
@@ -32,6 +32,23 @@ def create_app() -> Flask:
 
     # Cấu hình JSON trả về tiếng Việt
     app.config["JSON_AS_ASCII"] = False
+    app.config["JSON_SORT_KEYS"] = False
+
+    # Cấu hình cache tệp tĩnh
+    app.config["SEND_FILE_MAX_AGE_DEFAULT"] = int(
+        os.environ.get("SEND_FILE_MAX_AGE_DEFAULT", "43200")
+    )
+
+    # Cấu hình giới hạn kích thước yêu cầu
+    app.config["MAX_CONTENT_LENGTH"] = int(
+        os.environ.get("MAX_CONTENT_LENGTH", str(16 * 1024 * 1024))
+    )
+
+    # Cấu hình ngôn ngữ mặc định
+    app.config["DEFAULT_LOCALE"] = os.environ.get("DEFAULT_LOCALE", "vi")
+
+    # Cấu hình múi giờ
+    app.config["TIMEZONE"] = os.environ.get("TIMEZONE", "Asia/Ho_Chi_Minh")
 
     # Đăng ký route giao diện
     register_routes(app)
@@ -42,6 +59,7 @@ def create_app() -> Flask:
     # Đăng ký xử lý lỗi
     register_errors(app)
 
+    # Ghi log khởi tạo
     logger.info("Ứng dụng đã khởi tạo")
     return app
 
@@ -50,11 +68,27 @@ def register_routes(app: Flask) -> None:
     # Route trang chính
     @app.route("/")
     def index():
+        # Ghi log truy cập
+        logger.info("Truy cập trang chính từ %s", request.remote_addr)
+
         # Trả về trang chính với thời gian hiện tại
         return render_template(
             "index.html",
             now=datetime.utcnow(),
-            locale=os.environ.get("DEFAULT_LOCALE", "vi"),
+            locale=app.config["DEFAULT_LOCALE"],
+            timezone=app.config["TIMEZONE"],
+        )
+
+    # Route trang con nhện chạy trên code
+    @app.route("/spider")
+    def spider():
+        # Ghi log truy cập
+        logger.info("Truy cập trang con nhện từ %s", request.remote_addr)
+
+        # Trả về trang con nhện
+        return render_template(
+            "spider.html",
+            now=datetime.utcnow(),
         )
 
     # Route favicon tránh lỗi 404
@@ -62,6 +96,15 @@ def register_routes(app: Flask) -> None:
     def favicon():
         # Trả về 204 không nội dung
         return "", 204
+
+    # Route kiểm tra tình trạng
+    @app.route("/status")
+    def status():
+        # Trả về trạng thái hoạt động
+        return jsonify({
+            "status": "running",
+            "time": datetime.utcnow().isoformat(),
+        })
 
 
 def register_api(app: Flask) -> None:
@@ -79,6 +122,35 @@ def register_api(app: Flask) -> None:
         return jsonify({
             "name": "ho-so-cua-toi",
             "version": "1.0.0",
+            "build": "2026.10.06",
+        })
+
+    # Endpoint trả về thông tin chủ sở hữu
+    @app.route("/api/owner")
+    def owner():
+        return jsonify({
+            "name": "Doãn Trần Bảo Huy",
+            "telegram": "https://t.me/baohuyno1",
+            "zalo": "https://zalo.me/0347635805",
+            "phone": "0347635805",
+            "role": "Seller & Website, Bot Developer",
+        })
+
+    # Endpoint lấy danh sách dự án
+    @app.route("/api/projects")
+    def projects():
+        # Danh sách dự án mẫu
+        items = [
+            {"id": 1, "name": "Hồ sơ cá nhân", "status": "done"},
+            {"id": 2, "name": "Bot Telegram", "status": "wip"},
+            {"id": 3, "name": "Web API", "status": "done"},
+            {"id": 4, "name": "Con nhện chạy", "status": "done"},
+        ]
+
+        # Trả về danh sách dự án
+        return jsonify({
+            "count": len(items),
+            "items": items,
         })
 
     # Endpoint nhận dữ liệu hồ sơ
@@ -91,8 +163,12 @@ def register_api(app: Flask) -> None:
         if not isinstance(payload, dict):
             return jsonify({"error": "Dữ liệu không hợp lệ"}), 400
 
+        # Giới hạn số trường
+        if len(payload) > 20:
+            return jsonify({"error": "Vượt quá số trường cho phép"}), 400
+
         # Ghi log dữ liệu nhận được
-        logger.info("Nhận hồ sơ: %s", payload)
+        logger.info("Nhận hồ sơ từ %s: %s", request.remote_addr, payload)
 
         # Trả về kết quả
         return jsonify({
@@ -101,11 +177,32 @@ def register_api(app: Flask) -> None:
             "time": datetime.utcnow().isoformat(),
         })
 
+    # Endpoint lấy dữ liệu hồ sơ theo mã
+    @app.route("/api/profile/<int:user_id>")
+    def get_profile(user_id: int):
+        # Kiểm tra mã người dùng hợp lệ
+        if user_id <= 0:
+            return jsonify({"error": "Mã không hợp lệ"}), 400
+
+        # Trả về dữ liệu hồ sơ mẫu
+        return jsonify({
+            "user_id": user_id,
+            "data": {
+                "name": "Doãn Trần Bảo Huy",
+                "role": "Developer",
+            },
+            "time": datetime.utcnow().isoformat(),
+        })
+
 
 def register_errors(app: Flask) -> None:
     # Xử lý lỗi 404
     @app.errorhandler(404)
     def not_found(error):
+        # Kiểm tra yêu cầu thuộc API
+        if request.path.startswith("/api/"):
+            return jsonify({"error": "Không tìm thấy endpoint"}), 404
+
         return render_template(
             "error.html",
             code=404,
@@ -115,7 +212,13 @@ def register_errors(app: Flask) -> None:
     # Xử lý lỗi 500
     @app.errorhandler(500)
     def server_error(error):
+        # Ghi log lỗi
         logger.exception("Lỗi máy chủ: %s", error)
+
+        # Kiểm tra yêu cầu thuộc API
+        if request.path.startswith("/api/"):
+            return jsonify({"error": "Lỗi máy chủ nội bộ"}), 500
+
         return render_template(
             "error.html",
             code=500,
@@ -130,6 +233,15 @@ def register_errors(app: Flask) -> None:
             code=405,
             message="Phương thức không được phép",
         ), 405
+
+    # Xử lý lỗi 403
+    @app.errorhandler(403)
+    def forbidden(error):
+        return render_template(
+            "error.html",
+            code=403,
+            message="Không có quyền truy cập",
+        ), 403
 
 
 # Khởi tạo ứng dụng toàn cục cho gunicorn
