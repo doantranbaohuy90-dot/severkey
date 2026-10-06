@@ -7,6 +7,7 @@ logger = logging.getLogger(__name__)
 
 
 def register_routes(app) -> None:
+
     # Route trang chính
     @app.route("/")
     def index():
@@ -28,10 +29,7 @@ def register_routes(app) -> None:
         logger.info("Truy cập trang con nhện từ %s", request.remote_addr)
 
         # Trả về trang con nhện
-        return render_template(
-            "spider.html",
-            now=datetime.utcnow(),
-        )
+        return render_template("spider.html")
 
     # Route giới thiệu
     @app.route("/about")
