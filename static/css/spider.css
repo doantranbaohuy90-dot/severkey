@@ -1,0 +1,134 @@
+/* ==========================================================================
+   KHỐI CON NHỆN CHẠY TRÊN CODE
+   Định nghĩa khung chứa canvas và các thành phần liên quan
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   KHUNG CHỨA CANVAS
+   -------------------------------------------------------------------------- */
+.spider-card {
+  padding: 0;
+  overflow: hidden;
+  min-height: 420px;
+  background: #0a0a12;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2xl);
+  position: relative;
+}
+
+.spider-card:hover {
+  border-color: var(--border-light);
+}
+
+/* --------------------------------------------------------------------------
+   CANVAS
+   -------------------------------------------------------------------------- */
+.spider-card canvas {
+  display: block;
+  width: 100%;
+  height: 420px;
+  background: #0a0a12;
+  cursor: crosshair;
+}
+
+/* --------------------------------------------------------------------------
+   TIÊU ĐỀ KHỐI
+   -------------------------------------------------------------------------- */
+.spider-header {
+  position: absolute;
+  top: 12px;
+  left: 16px;
+  z-index: var(--z-content);
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  pointer-events: none;
+  user-select: none;
+}
+
+.spider-header .accent {
+  color: #c060ff;
+}
+
+/* --------------------------------------------------------------------------
+   CHÚ THÍCH DƯỚI KHỐI
+   -------------------------------------------------------------------------- */
+.spider-caption {
+  margin-top: var(--space-md);
+  font-size: var(--fs-xs);
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  letter-spacing: 1px;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+/* --------------------------------------------------------------------------
+   ĐIỀU KHIỂN CON NHỆN
+   -------------------------------------------------------------------------- */
+.spider-controls {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-md);
+  margin-top: var(--space-lg);
+}
+
+.spider-controls .btn {
+  padding: var(--space-sm) var(--space-base);
+  font-size: var(--fs-xs);
+}
+
+/* --------------------------------------------------------------------------
+   ĐIỀU CHỈNH MÀN HÌNH NHỎ
+   -------------------------------------------------------------------------- */
+@media (max-width: 480px) {
+  .spider-card {
+    min-height: 360px;
+    border-radius: var(--radius-xl);
+  }
+
+  .spider-card canvas {
+    height: 360px;
+  }
+
+  .spider-header {
+    font-size: var(--fs-xs);
+    letter-spacing: 1px;
+  }
+}
+
+@media (max-width: 360px) {
+  .spider-card {
+    min-height: 300px;
+  }
+
+  .spider-card canvas {
+    height: 300px;
+  }
+
+  .spider-header {
+    top: 8px;
+    left: 12px;
+    font-size: 9px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   CHẾ ĐỘ GIẢM CHUYỂN ĐỘNG
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .spider-card canvas {
+    /* Canvas tự xử lý chuyển động bằng JS */
+  }
+}
+
+/* --------------------------------------------------------------------------
+   CHẾ ĐỘ IN ẤN
+   -------------------------------------------------------------------------- */
+@media print {
+  .spider-card {
+    display: none;
+  }
+}
