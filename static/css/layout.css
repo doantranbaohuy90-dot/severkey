@@ -1,0 +1,299 @@
+/* ==========================================================================
+   BỐ CỤC TỔNG THỂ
+   Định nghĩa khung trang, container, card và footer
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   THẺ BODY
+   -------------------------------------------------------------------------- */
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-main);
+  font-size: var(--fs-base);
+  font-weight: var(--fw-normal);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--container-padding);
+  gap: var(--space-base);
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* --------------------------------------------------------------------------
+   CONTAINER CHÍNH
+   -------------------------------------------------------------------------- */
+.container {
+  width: 100%;
+  max-width: var(--container-width);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-base);
+}
+
+/* --------------------------------------------------------------------------
+   KHỐI CARD CHUNG
+   -------------------------------------------------------------------------- */
+.card {
+  width: 100%;
+  max-width: var(--container-width);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2xl);
+  padding: var(--card-padding);
+  position: relative;
+  overflow: hidden;
+  transition: border-color var(--transition-base),
+              background var(--transition-base);
+}
+
+.card:hover {
+  border-color: var(--border-light);
+}
+
+/* --------------------------------------------------------------------------
+   CHÂN TRANG
+   -------------------------------------------------------------------------- */
+.footer {
+  margin-top: var(--space-sm);
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  text-align: center;
+  user-select: none;
+}
+
+/* --------------------------------------------------------------------------
+   TIÊU ĐỀ PHẦN
+   -------------------------------------------------------------------------- */
+.section-title {
+  font-size: var(--fs-sm);
+  letter-spacing: 6px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  font-family: var(--font-mono);
+  text-align: center;
+  position: relative;
+  display: inline-block;
+  padding: 0 var(--space-base);
+}
+
+.section-title::before,
+.section-title::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 40px;
+  height: 1px;
+  background: var(--border);
+}
+
+.section-title::before { left: -40px; }
+.section-title::after { right: -40px; }
+
+/* --------------------------------------------------------------------------
+   ĐƯỜNG PHÂN CÁCH
+   -------------------------------------------------------------------------- */
+.divider {
+  width: 100%;
+  height: 1px;
+  background: var(--border);
+  margin: var(--space-base) 0;
+  border: none;
+}
+
+/* --------------------------------------------------------------------------
+   NHÓM NÚT
+   -------------------------------------------------------------------------- */
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+  justify-content: center;
+  margin-top: var(--space-lg);
+}
+
+/* --------------------------------------------------------------------------
+   NÚT CHUNG
+   -------------------------------------------------------------------------- */
+.btn {
+  display: inline-block;
+  padding: var(--space-md) var(--space-xl);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: transparent;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  text-align: center;
+  cursor: pointer;
+  transition: color var(--transition-base),
+              border-color var(--transition-base),
+              background var(--transition-base);
+}
+
+.btn:hover {
+  color: var(--text-strong);
+  border-color: var(--text-strong);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btn:disabled {
+  opacity: var(--opacity-dim);
+  cursor: not-allowed;
+}
+
+/* --------------------------------------------------------------------------
+   LƯỚI
+   -------------------------------------------------------------------------- */
+.grid {
+  display: grid;
+  gap: var(--space-base);
+  width: 100%;
+}
+
+.grid-2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.grid-3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+/* --------------------------------------------------------------------------
+   HÀNG LINH HOẠT
+   -------------------------------------------------------------------------- */
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  width: 100%;
+}
+
+.row-between {
+  justify-content: space-between;
+}
+
+.row-center {
+  justify-content: center;
+}
+
+/* --------------------------------------------------------------------------
+   CỘT LINH HOẠT
+   -------------------------------------------------------------------------- */
+.col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  width: 100%;
+}
+
+/* --------------------------------------------------------------------------
+   CĂN CHỈNH VĂN BẢN
+   -------------------------------------------------------------------------- */
+.text-center { text-align: center; }
+.text-left   { text-align: left; }
+.text-right  { text-align: right; }
+
+/* --------------------------------------------------------------------------
+   TIỆN ÍCH KHOẢNG CÁCH
+   -------------------------------------------------------------------------- */
+.mt-sm { margin-top: var(--space-sm); }
+.mt-md { margin-top: var(--space-md); }
+.mt-lg { margin-top: var(--space-lg); }
+.mt-xl { margin-top: var(--space-xl); }
+
+.mb-sm { margin-bottom: var(--space-sm); }
+.mb-md { margin-bottom: var(--space-md); }
+.mb-lg { margin-bottom: var(--space-lg); }
+.mb-xl { margin-bottom: var(--space-xl); }
+
+.p-sm { padding: var(--space-sm); }
+.p-md { padding: var(--space-md); }
+.p-lg { padding: var(--space-lg); }
+.p-xl { padding: var(--space-xl); }
+
+/* --------------------------------------------------------------------------
+   TIỆN ÍCH HIỂN THỊ
+   -------------------------------------------------------------------------- */
+.hidden   { display: none !important; }
+.visible  { display: block !important; }
+.flex     { display: flex !important; }
+.inline   { display: inline-block !important; }
+
+/* --------------------------------------------------------------------------
+   TIỆN ÍCH VỊ TRÍ
+   -------------------------------------------------------------------------- */
+.relative { position: relative; }
+.absolute { position: absolute; }
+.fixed    { position: fixed; }
+.sticky   { position: sticky; }
+
+/* --------------------------------------------------------------------------
+   TIỆN ÍCH TRÀN
+   -------------------------------------------------------------------------- */
+.overflow-hidden { overflow: hidden; }
+.overflow-auto   { overflow: auto; }
+.overflow-scroll { overflow: scroll; }
+
+/* --------------------------------------------------------------------------
+   TIỆN ÍCH ĐỘ RỘNG
+   -------------------------------------------------------------------------- */
+.w-full   { width: 100%; }
+.w-auto   { width: auto; }
+.h-full   { height: 100%; }
+.h-auto   { height: auto; }
+
+/* --------------------------------------------------------------------------
+   TIỆN ÍCH MÀU
+   -------------------------------------------------------------------------- */
+.text-muted   { color: var(--text-muted); }
+.text-strong  { color: var(--text-strong); }
+.text-accent  { color: var(--accent); }
+
+.bg-card      { background: var(--card); }
+.bg-transparent { background: transparent; }
+
+/* --------------------------------------------------------------------------
+   TIỆN ÍCH BO GÓC
+   -------------------------------------------------------------------------- */
+.rounded-sm   { border-radius: var(--radius-sm); }
+.rounded-md   { border-radius: var(--radius-md); }
+.rounded-lg   { border-radius: var(--radius-lg); }
+.rounded-xl   { border-radius: var(--radius-xl); }
+.rounded-full { border-radius: var(--radius-full); }
+
+/* --------------------------------------------------------------------------
+   TIỆN ÍCH ĐỔ BÓNG
+   -------------------------------------------------------------------------- */
+.shadow-sm { box-shadow: var(--shadow-sm); }
+.shadow-md { box-shadow: var(--shadow-md); }
+.shadow-lg { box-shadow: var(--shadow-lg); }
+.shadow-glow { box-shadow: var(--shadow-glow); }
+
+/* --------------------------------------------------------------------------
+   NỘI DUNG ẨN KHỎI MẮT THƯỜNG NHƯNG CÒN CHO TRÌNH ĐỌC MÀN HÌNH
+   -------------------------------------------------------------------------- */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
