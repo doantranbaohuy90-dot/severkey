@@ -1,0 +1,258 @@
+/* ==========================================================================
+   KHỐI GIỚI THIỆU
+   Định nghĩa tiêu đề nghề nghiệp, nền chấm, thư mục và trích dẫn
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   KHUNG GIỚI THIỆU
+   -------------------------------------------------------------------------- */
+.intro-card {
+  min-height: 300px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: var(--space-2xl) var(--space-xl);
+}
+
+/* --------------------------------------------------------------------------
+   NỀN CHẤM THẾ GIỚI
+   -------------------------------------------------------------------------- */
+.world-dots {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(
+    circle,
+    var(--dots-color) 1px,
+    transparent 1px
+  );
+  background-size: var(--dots-size) var(--dots-size);
+  mask-image: radial-gradient(
+    ellipse at center,
+    #000 30%,
+    transparent 75%
+  );
+  -webkit-mask-image: radial-gradient(
+    ellipse at center,
+    #000 30%,
+    transparent 75%
+  );
+  opacity: var(--opacity-dim);
+  pointer-events: none;
+  z-index: var(--z-base);
+}
+
+/* --------------------------------------------------------------------------
+   TIÊU ĐỀ NGHỀ NGHIỆP
+   -------------------------------------------------------------------------- */
+.job-title {
+  position: relative;
+  z-index: var(--z-content);
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-md);
+  font-size: var(--fs-xl);
+  letter-spacing: 2px;
+  line-height: 1.5;
+  font-weight: var(--fw-bold);
+}
+
+/* --------------------------------------------------------------------------
+   DẤU NHẮC LỆNH
+   -------------------------------------------------------------------------- */
+.prompt {
+  color: var(--text-strong);
+  font-family: var(--font-mono);
+  font-weight: var(--fw-bold);
+  flex-shrink: 0;
+  animation: prompt-blink 1.2s step-end infinite;
+}
+
+@keyframes prompt-blink {
+  50% { opacity: var(--opacity-dim); }
+}
+
+/* --------------------------------------------------------------------------
+   NỘI DUNG NGHỀ NGHIỆP
+   -------------------------------------------------------------------------- */
+.job-text {
+  text-transform: uppercase;
+  color: var(--text-strong);
+  word-break: break-word;
+}
+
+/* --------------------------------------------------------------------------
+   BIỂU TƯỢNG THƯ MỤC
+   -------------------------------------------------------------------------- */
+.folder {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: var(--z-content);
+  text-align: center;
+  pointer-events: none;
+}
+
+.folder-icon {
+  width: var(--folder-width);
+  height: var(--folder-height);
+  background: #3a5a7a;
+  border-radius: var(--radius-sm);
+  position: relative;
+  margin: 0 auto;
+  box-shadow: var(--shadow-sm);
+}
+
+.folder-icon::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: 0;
+  width: var(--folder-tab-width);
+  height: var(--folder-tab-height);
+  background: #3a5a7a;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+}
+
+.folder-label {
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+  margin-top: var(--space-xs);
+  font-family: var(--font-mono);
+  letter-spacing: 1px;
+  text-transform: lowercase;
+}
+
+/* --------------------------------------------------------------------------
+   TRÍCH DẪN
+   -------------------------------------------------------------------------- */
+.quote {
+  position: relative;
+  z-index: var(--z-content);
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  font-style: italic;
+  font-size: var(--fs-lg);
+  color: #d0d0d0;
+  margin-top: auto;
+}
+
+.quote-bar {
+  width: var(--bar-width);
+  height: var(--bar-height);
+  background: #4a4a4a;
+  flex-shrink: 0;
+  border-radius: var(--radius-full);
+}
+
+.quote span {
+  line-height: 1.4;
+}
+
+/* --------------------------------------------------------------------------
+   CON TRỎ NHẤP NHÁY
+   -------------------------------------------------------------------------- */
+.cursor {
+  display: inline-block;
+  animation: blink 1s step-end infinite;
+  color: var(--text-strong);
+  font-style: normal;
+}
+
+@keyframes blink {
+  50% { opacity: 0; }
+}
+
+/* --------------------------------------------------------------------------
+   HIỆU ỨNG XUẤT HIỆN
+   -------------------------------------------------------------------------- */
+.intro-card {
+  animation: intro-fade-in 0.6s ease forwards;
+}
+
+@keyframes intro-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   ĐIỀU CHỈNH MÀN HÌNH NHỎ
+   -------------------------------------------------------------------------- */
+@media (max-width: 420px) {
+  .intro-card {
+    min-height: 260px;
+    padding: var(--space-xl) var(--space-lg);
+  }
+
+  .job-title {
+    font-size: var(--fs-md);
+    letter-spacing: 1px;
+    gap: var(--space-sm);
+  }
+
+  .quote {
+    font-size: var(--fs-base);
+    gap: var(--space-sm);
+  }
+
+  .quote-bar {
+    height: 32px;
+  }
+
+  .folder-icon {
+    width: 34px;
+    height: 26px;
+  }
+
+  .folder-icon::before {
+    width: 14px;
+    height: 7px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   ĐIỀU CHỈNH MÀN HÌNH RẤT NHỎ
+   -------------------------------------------------------------------------- */
+@media (max-width: 320px) {
+  .job-title {
+    font-size: var(--fs-sm);
+  }
+
+  .quote {
+    font-size: var(--fs-sm);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   CHẾ ĐỘ TƯƠNG PHẢN CAO
+   -------------------------------------------------------------------------- */
+@media (prefers-contrast: high) {
+  .job-text,
+  .quote,
+  .prompt,
+  .cursor {
+    color: #ffffff;
+  }
+
+  .world-dots {
+    opacity: 0.8;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   CHẾ ĐỘ GIẢM CHUYỂN ĐỘNG
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .intro-card,
+  .prompt,
+  .cursor {
+    animation: none;
+  }
+}
