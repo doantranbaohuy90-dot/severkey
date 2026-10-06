@@ -1,7 +1,7 @@
 # Đăng ký các route giao diện cho ứng dụng Flask
 import logging
 from datetime import datetime
-from flask import render_template, redirect, url_for, request
+from flask import render_template, redirect, url_for, request, jsonify
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +19,18 @@ def register_routes(app) -> None:
             now=datetime.utcnow(),
             locale=app.config.get("DEFAULT_LOCALE", "vi"),
             timezone=app.config.get("TIMEZONE", "Asia/Ho_Chi_Minh"),
+        )
+
+    # Route trang con nhện chạy trên code
+    @app.route("/spider")
+    def spider():
+        # Ghi log truy cập
+        logger.info("Truy cập trang con nhện từ %s", request.remote_addr)
+
+        # Trả về trang con nhện
+        return render_template(
+            "spider.html",
+            now=datetime.utcnow(),
         )
 
     # Route giới thiệu
@@ -39,6 +51,23 @@ def register_routes(app) -> None:
             now=datetime.utcnow(),
         )
 
+    # Route dự án
+    @app.route("/projects")
+    def projects():
+        # Danh sách dự án mẫu
+        items = [
+            {"name": "Hồ sơ cá nhân", "status": "hoàn thành"},
+            {"name": "Bot Telegram", "status": "đang phát triển"},
+            {"name": "Web API", "status": "hoàn thành"},
+        ]
+
+        # Trả về trang dự án
+        return render_template(
+            "projects.html",
+            items=items,
+            now=datetime.utcnow(),
+        )
+
     # Route chuyển hướng trang chủ
     @app.route("/home")
     def home():
@@ -55,10 +84,10 @@ def register_routes(app) -> None:
     @app.route("/status")
     def status():
         # Trả về trạng thái hoạt động
-        return {
+        return jsonify({
             "status": "running",
             "time": datetime.utcnow().isoformat(),
-        }
+        })
 
     # Route bắt mọi đường dẫn không tồn tại
     @app.route("/<path:path>")
