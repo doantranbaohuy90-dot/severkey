@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Con nhện chạy trên studio.prompt</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    width: 100%;
+    height: 100%;
+    background: #0a0a12;
+    overflow: hidden;
+    font-family: 'Courier New', monospace;
+  }
+  #c {
+    display: block;
+    width: 100vw;
+    height: 100vh;
+    cursor: crosshair;
+  }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+var canvas = document.getElementById('c');
+var ctx = canvas.getContext('2d');
+var W = 0, H = 0;
+
+// Nhãn lấy từ studio.prompt trong ảnh
+var LABELS = [
+  'staff hired', 'source packet', 'clear object', 'drafts',
+  'role', 'objective', 'ship', 'one', 'manual run', 'start',
+  'result', 'repeat', 'use only', 'actually', 'provided',
+  'brand', 'fact sheet', 'transcript', 'saved', 'feedback',
+  'next', 'approve', 'publishing', 'external', 'context',
+  'researcher', 'writer', 'producer', 'editor', 'publisher'
+];
+
+var nodes = [];
+var spider = {
+  index: 0,
+  x: 0,
+  y: 0,
+  vx: 0,
+  vy: 0,
+  legPhase: 0,
+  wait: 0,
+  size: 2,
+  color: '#c060ff',
+  speed: 0.25,
+  maxSpeed: 7
+};
+
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+  buildNodes();
+  resetSpider();
+}
+
+function buildNodes() {
+  nodes = [];
+  if (W <= 0 || H <= 0) return;
+
+  var paddingX = 130;
+  var paddingY = 70;
+  var cols = Math.max(2, Math.floor(W / paddingX));
+  var rows = Math.ceil(LABELS.length / cols);
+  var offsetX = (W - (cols - 1) * paddingX) / 2;
+  var offsetY = (H - (rows - 1) * paddingY) / 2;
+
+  for (var i = 0; i < LABELS.length; i++) {
+    var col = i % cols;
+    var row = Math.floor(i / cols);
+    nodes.push({
+      label: LABELS[i],
+      x: offsetX + col * paddingX,
+      y: offsetY + row * paddingY,
+      radius: 28
+    });
+  }
+}
+
+function resetSpider() {
+  if (nodes.length === 0) return;
+  spider.index = 0;
+  spider.x = nodes[0].x;
+  spider.y = nodes[0].y;
+  spider.vx = 0;
+  spider.vy = 0;
+}
+
+function updateSpider() {
+  if (nodes.length === 0) return;
+
+  if (spider.wait > 0) {
+    spider.wait--;
+    spider.legPhase += 0.15;
+    return;
+  }
+
+  var target = nodes[spider.index];
+  var dx = target.x - spider.x;
+  var dy = target.y - spider.y;
+  var dist = Math.sqrt(dx * dx + dy * dy);
+
+  if (dist < 5) {
+    spider.x = target.x;
+    spider.y = target.y;
+    spider.vx = 0;
+    spider.vy = 0;
+    spider.wait = 25;
+    spider.index = (spider.index + 1) % nodes.length;
+    return;
+  }
+
+  spider.vx += (dx / dist) * spider.speed;
+  spider.vy += (dy / dist) * spider.speed;
+
+  var sp = Math.sqrt(spider.vx * spider.vx + spider.vy * spider.vy);
+  if (sp > spider.maxSpeed) {
+    spider.vx = (spider.vx / sp) * spider.maxSpeed;
+    spider.vy = (spider.vy / sp) * spider.maxSpeed;
+  }
+
+  spider.vx *= 0.96;
+  spider.vy *= 0.96;
+  spider.x += spider.vx;
+  spider.y += spider.vy;
+  spider.legPhase += 0.4 + sp * 0.1;
+}
+
+function drawSpider(c) {
+  var s = spider.size;
+  c.save();
+  c.translate(spider.x, spider.y);
+
+  var angle = Math.atan2(spider.vy, spider.vx);
+  c.rotate(angle + Math.PI / 2);
+
+  c.strokeStyle = spider.color;
+  c.lineWidth = 1.5;
+  c.lineCap = 'round';
+
+  for (var i = 0; i < 8; i++) {
+    var side = i < 4 ? -1 : 1;
+    var idx = i % 4;
+    var baseAngle = -Math.PI / 2 + side * (0.5 + idx * 0.45);
+    var swing = Math.sin(spider.legPhase + i) * 0.35;
+    var len1 = 7 * s;
+    var len2 = 9 * s;
+
+    var a1 = baseAngle + swing;
+    var x1 = Math.cos(a1) * len1;
+    var y1 = Math.sin(a1) * len1;
+
+    var a2 = a1 + side * 0.6;
+    var x2 = x1 + Math.cos(a2) * len2;
+    var y2 = y1 + Math.sin(a2) * len2;
+
+    c.beginPath();
+    c.moveTo(0, 0);
+    c.lineTo(x1, y1);
+    c.lineTo(x2, y2);
+    c.stroke();
+  }
+
+  c.fillStyle = spider.color;
+  c.beginPath();
+  c.ellipse(0, 2 * s, 3.5 * s, 4.5 * s, 0, 0, Math.PI * 2);
+  c.fill();
+
+  c.beginPath();
+  c.ellipse(0, -3.5 * s, 2.5 * s, 2.5 * s, 0, 0, Math.PI * 2);
+  c.fill();
+
+  c.fillStyle = '#ffffff';
+  c.beginPath();
+  c.arc(-1 * s, -4 * s, 0.7 * s, 0, Math.PI * 2);
+  c.arc(1 * s, -4 * s, 0.7 * s, 0, Math.PI * 2);
+  c.fill();
+
+  c.restore();
+}
+
+function drawNodes(c) {
+  for (var i = 0; i < nodes.length; i++) {
+    var n = nodes[i];
+    var isTarget = i === spider.index;
+
+    c.beginPath();
+    c.arc(n.x, n.y, n.radius, 0, Math.PI * 2);
+    c.fillStyle = isTarget
+      ? 'rgba(192, 96, 255, 0.15)'
+      : 'rgba(255, 255, 255, 0.03)';
+    c.fill();
+
+    c.strokeStyle = isTarget ? spider.color : 'rgba(255, 255, 255, 0.2)';
+    c.lineWidth = isTarget ? 2 : 1;
+    c.stroke();
+
+    c.fillStyle = isTarget ? '#ffffff' : 'rgba(255, 255, 255, 0.6)';
+    c.font = '11px Courier New';
+    c.textAlign = 'center';
+    c.textBaseline = 'middle';
+    c.fillText(n.label, n.x, n.y);
+  }
+}
+
+function loop() {
+  ctx.fillStyle = 'rgba(10, 10, 18, 0.3)';
+  ctx.fillRect(0, 0, W, H);
+
+  drawNodes(ctx);
+  updateSpider();
+  drawSpider(ctx);
+
+  requestAnimationFrame(loop);
+}
+
+window.addEventListener('resize', resize);
+resize();
+loop();
+</script>
+</body>
+</html>
