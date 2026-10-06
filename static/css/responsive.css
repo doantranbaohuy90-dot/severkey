@@ -1,0 +1,438 @@
+/* ==========================================================================
+   ĐIỀU CHỈNH ĐÁP ỨNG
+   Định nghĩa quy tắc cho các kích thước màn hình và thiết bị khác nhau
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   MÀN HÌNH LỚN (DESKTOP)
+   -------------------------------------------------------------------------- */
+@media (min-width: 1200px) {
+  :root {
+    --container-width: 520px;
+    --container-padding: 32px;
+  }
+
+  .card {
+    padding: 32px 28px;
+  }
+
+  .clock-time {
+    font-size: 80px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   MÁY TÍNH BẢNG (TABLET)
+   -------------------------------------------------------------------------- */
+@media (max-width: 1024px) {
+  :root {
+    --container-width: 460px;
+  }
+
+  .card {
+    padding: 26px 22px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   ĐIỆN THOẠI LỚN
+   -------------------------------------------------------------------------- */
+@media (max-width: 768px) {
+  :root {
+    --container-width: 100%;
+    --container-padding: 16px;
+  }
+
+  body {
+    padding: 16px;
+    gap: 12px;
+  }
+
+  .container {
+    gap: 12px;
+  }
+
+  .card {
+    padding: 24px 20px;
+    border-radius: 16px;
+  }
+
+  .clock-time {
+    font-size: 64px;
+  }
+
+  .clock-seconds {
+    font-size: 20px;
+  }
+
+  .clock-ampm {
+    font-size: 16px;
+  }
+
+  .clock-date {
+    font-size: 13px;
+    letter-spacing: 2px;
+  }
+
+  .job-title {
+    font-size: 18px;
+  }
+
+  .quote {
+    font-size: 16px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   ĐIỆN THOẠI NHỎ
+   -------------------------------------------------------------------------- */
+@media (max-width: 480px) {
+  body {
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .card {
+    padding: 20px 16px;
+    border-radius: 14px;
+  }
+
+  .clock-time {
+    font-size: 56px;
+    letter-spacing: -1px;
+  }
+
+  .clock-seconds {
+    font-size: 18px;
+    margin-top: 6px;
+  }
+
+  .clock-ampm {
+    font-size: 15px;
+  }
+
+  .clock-date {
+    font-size: 12px;
+    letter-spacing: 2px;
+    margin-top: 10px;
+  }
+
+  .intro-card {
+    min-height: 260px;
+  }
+
+  .job-title {
+    font-size: 16px;
+    letter-spacing: 1px;
+    gap: 8px;
+  }
+
+  .quote {
+    font-size: 15px;
+    gap: 8px;
+  }
+
+  .quote-bar {
+    height: 32px;
+  }
+
+  .folder-icon {
+    width: 34px;
+    height: 26px;
+  }
+
+  .folder-icon::before {
+    width: 14px;
+    height: 7px;
+  }
+
+  .connect-title {
+    font-size: 12px;
+    letter-spacing: 4px;
+  }
+
+  .connect-title::before,
+  .connect-title::after {
+    width: 20px;
+  }
+
+  .connect-title::before { left: -20px; }
+  .connect-title::after { right: -20px; }
+
+  .connect-link {
+    padding: 10px 14px;
+    border-radius: 10px;
+  }
+
+  .connect-label,
+  .connect-value {
+    font-size: 11px;
+    letter-spacing: 1px;
+  }
+
+  .footer {
+    font-size: 10px;
+    letter-spacing: 1px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   ĐIỆN THOẠI RẤT NHỎ
+   -------------------------------------------------------------------------- */
+@media (max-width: 360px) {
+  body {
+    padding: 10px;
+    gap: 8px;
+  }
+
+  .card {
+    padding: 16px 14px;
+    border-radius: 12px;
+  }
+
+  .clock-time {
+    font-size: 44px;
+  }
+
+  .clock-seconds {
+    font-size: 15px;
+  }
+
+  .clock-ampm {
+    font-size: 13px;
+  }
+
+  .clock-date {
+    font-size: 10px;
+    letter-spacing: 1px;
+  }
+
+  .intro-card {
+    min-height: 220px;
+  }
+
+  .job-title {
+    font-size: 13px;
+    letter-spacing: 1px;
+  }
+
+  .quote {
+    font-size: 12px;
+  }
+
+  .quote-bar {
+    height: 26px;
+    width: 2px;
+  }
+
+  .folder-icon {
+    width: 28px;
+    height: 22px;
+  }
+
+  .folder-icon::before {
+    width: 12px;
+    height: 6px;
+    top: -5px;
+  }
+
+  .folder-label {
+    font-size: 8px;
+  }
+
+  .connect-title {
+    font-size: 10px;
+    letter-spacing: 3px;
+  }
+
+  .connect-title::before,
+  .connect-title::after {
+    width: 14px;
+  }
+
+  .connect-title::before { left: -14px; }
+  .connect-title::after { right: -14px; }
+
+  .connect-link {
+    padding: 8px 12px;
+    border-radius: 8px;
+  }
+
+  .connect-label,
+  .connect-value {
+    font-size: 10px;
+  }
+
+  .footer {
+    font-size: 9px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   ĐIỆN THOẠI SIÊU NHỎ
+   -------------------------------------------------------------------------- */
+@media (max-width: 320px) {
+  .clock-time {
+    font-size: 36px;
+  }
+
+  .clock-seconds {
+    font-size: 13px;
+  }
+
+  .job-title {
+    font-size: 11px;
+  }
+
+  .quote {
+    font-size: 11px;
+  }
+
+  .connect-label,
+  .connect-value {
+    font-size: 9px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   MÀN HÌNH NGANG ĐIỆN THOẠI
+   -------------------------------------------------------------------------- */
+@media (max-height: 500px) and (orientation: landscape) {
+  body {
+    justify-content: flex-start;
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .card {
+    padding: 16px 18px;
+  }
+
+  .clock-time {
+    font-size: 40px;
+  }
+
+  .clock-seconds {
+    font-size: 14px;
+  }
+
+  .clock-date {
+    margin-top: 8px;
+    font-size: 11px;
+  }
+
+  .intro-card {
+    min-height: 200px;
+  }
+
+  .job-title {
+    font-size: 14px;
+  }
+
+  .quote {
+    font-size: 13px;
+  }
+
+  .quote-bar {
+    height: 24px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   MÀN HÌNH IN ẤN
+   -------------------------------------------------------------------------- */
+@media print {
+  body {
+    background: #ffffff;
+    color: #000000;
+    padding: 0;
+    gap: 0;
+  }
+
+  .card {
+    background: #ffffff;
+    border: 1px solid #cccccc;
+    border-radius: 0;
+    box-shadow: none;
+    page-break-inside: avoid;
+  }
+
+  .world-dots,
+  .cursor,
+  .prompt {
+    display: none;
+  }
+
+  .connect-link {
+    border-color: #cccccc;
+  }
+
+  .footer {
+    color: #666666;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   CHẾ ĐỘ TỐI (MẶC ĐỊNH)
+   -------------------------------------------------------------------------- */
+@media (prefers-color-scheme: dark) {
+  /* Giữ nguyên bảng màu tối mặc định */
+}
+
+/* --------------------------------------------------------------------------
+   CHẾ ĐỘ SÁNG
+   -------------------------------------------------------------------------- */
+@media (prefers-color-scheme: light) {
+  .connect-link:hover {
+    background: rgba(0, 0, 0, 0.04);
+  }
+
+  .btn:hover {
+    background: rgba(0, 0, 0, 0.04);
+  }
+
+  .folder-icon,
+  .folder-icon::before {
+    background: #5a7a9a;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   CHẾ ĐỘ TƯƠNG PHẢN CAO
+   -------------------------------------------------------------------------- */
+@media (prefers-contrast: high) {
+  .card {
+    border-width: 2px;
+  }
+
+  .connect-link,
+  .btn {
+    border-width: 2px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   CHẾ ĐỘ GIẢM CHUYỂN ĐỘNG
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   HỖ TRỢ VÙNG AN TOÀN (IPHONE NOTCH)
+   -------------------------------------------------------------------------- */
+@supports (padding: env(safe-area-inset-bottom)) {
+  body {
+    padding-left: max(12px, env(safe-area-inset-left));
+    padding-right: max(12px, env(safe-area-inset-right));
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+    padding-top: max(12px, env(safe-area-inset-top));
+  }
+}
