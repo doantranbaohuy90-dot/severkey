@@ -1,13 +1,16 @@
-# Đăng ký các route API cho ứng dụng Flask
+# Đăng ký các route API
 import logging
 from datetime import datetime
 from flask import jsonify, request
+
+from spider_engine import get_spider_payload
 
 logger = logging.getLogger(__name__)
 
 
 def register_api(app) -> None:
-    # Endpoint kiểm tra tình trạng máy chủ
+
+    # Endpoint kiểm tra tình trạng
     @app.route("/api/health")
     def health():
         # Trả về trạng thái hoạt động
@@ -16,93 +19,43 @@ def register_api(app) -> None:
             "time": datetime.utcnow().isoformat(),
         })
 
-    # Endpoint trả về phiên bản ứng dụng
-    @app.route("/api/version")
-    def version():
-        # Trả về thông tin phiên bản
-        return jsonify({
-            "name": "ho-so-cua-toi",
-            "version": "1.0.0",
-            "build": "2026.10.06",
-        })
+    # Endpoint cấu hình nhện
+    @app.route("/api/spider/config")
+    def spider_config():
+        # Trả về cấu hình đầy đủ cho client
+        return jsonify(get_spider_payload())
 
-    # Endpoint lấy danh sách dự án
-    @app.route("/api/projects")
-    def get_projects():
-        # Danh sách dự án mẫu
-        projects = [
-            {"id": 1, "name": "Hồ sơ cá nhân", "status": "done"},
-            {"id": 2, "name": "Bot Telegram", "status": "wip"},
-            {"id": 3, "name": "Web API", "status": "done"},
-        ]
+    # Endpoint danh sách node
+    @app.route("/api/spider/nodes")
+    def spider_nodes():
+        # Trả về danh sách node
+        payload = get_spider_payload()
+        return jsonify(payload["nodes"])
 
-        # Trả về danh sách dự án
-        return jsonify({
-            "count": len(projects),
-            "items": projects,
-        })
-
-    # Endpoint nhận dữ liệu hồ sơ
-    @app.route("/api/profile", methods=["POST"])
-    def save_profile():
-        # Đọc dữ liệu JSON từ yêu cầu
-        payload = request.get_json(silent=True)
+    # Endpoint lấy nhãn tùy chỉnh từ yêu cầu
+    @app.route("/api/spider/nodes", methods=["POST"])
+    def spider_nodes_custom():
+        # Đọc dữ liệu JSON
+        data = request.get_json(silent=True)
 
         # Kiểm tra dữ liệu đầu vào
-        if not isinstance(payload, dict):
+        if not isinstance(data, dict):
             return jsonify({"error": "Dữ liệu không hợp lệ"}), 400
 
-        # Kiểm tra số trường tối đa
-        max_fields = app.config.get("MAX_PROFILE_FIELDS", 20)
-        if len(payload) > max_fields:
-            return jsonify({"error": "Vượt quá số trường cho phép"}), 400
+        # Lấy danh sách nhãn
+        labels = data.get("labels")
 
-        # Ghi log dữ liệu nhận được
-        logger.info("Nhận hồ sơ từ %s: %s", request.remote_addr, payload)
+        # Kiểm tra kiểu dữ liệu
+        if not isinstance(labels, list):
+            return jsonify({"error": "Danh sách nhãn không hợp lệ"}), 400
 
-        # Trả về kết quả
-        return jsonify({
-            "status": "saved",
-            "received": payload,
-            "time": datetime.utcnow().isoformat(),
-        })
+        # Giới hạn số lượng
+        if len(labels) > 60:
+            return jsonify({"error": "Quá nhiều nhãn"}), 400
 
-    # Endpoint lấy dữ liệu hồ sơ theo mã
-    @app.route("/api/profile/<int:user_id>")
-    def get_profile(user_id: int):
-        # Kiểm tra mã người dùng hợp lệ
-        if user_id <= 0:
-            return jsonify({"error": "Mã không hợp lệ"}), 400
+        # Lọc nhãn hợp lệ
+        clean = [str(x)[:64] for x in labels if isinstance(x, str)]
 
-        # Trả về dữ liệu hồ sơ mẫu
-        return jsonify({
-            "user_id": user_id,
-            "data": {
-                "name": "Bao Huy",
-                "role": "Developer",
-            },
-            "time": datetime.utcnow().isoformat(),
-        })
-
-    # Endpoint xử lý lỗi API
-    @app.errorhandler(404)
-    def api_not_found(error):
-        # Kiểm tra yêu cầu thuộc API
-        if request.path.startswith("/api/"):
-            return jsonify({"error": "Không tìm thấy endpoint"}), 404
-
-        # Trả về lỗi mặc định
-        return error
-
-    # Endpoint xử lý lỗi máy chủ API
-    @app.errorhandler(500)
-    def api_server_error(error):
-        # Ghi log lỗi
-        logger.exception("Lỗi máy chủ API: %s", error)
-
-        # Kiểm tra yêu cầu thuộc API
-        if request.path.startswith("/api/"):
-            return jsonify({"error": "Lỗi máy chủ nội bộ"}), 500
-
-        # Trả về lỗi mặc định
-        return error
+        # Trả về cấu hình mới
+        from spider_engine import build_node_config
+        return jsonify(build_node_config(clean))
