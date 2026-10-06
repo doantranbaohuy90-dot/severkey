@@ -1,83 +1,324 @@
-/* Khối thông báo lỗi */
+/* ==========================================================================
+   KHỐI THÔNG BÁO LỖI
+   Định nghĩa khung, mã lỗi, tiêu đề, mô tả, nút và liên kết hỗ trợ
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   KHUNG LỖI
+   -------------------------------------------------------------------------- */
 .error-card {
   text-align: center;
-  padding: 40px 24px;
+  padding: var(--space-4xl) var(--space-xl);
+  position: relative;
+  overflow: hidden;
+  animation: error-fade-in 0.5s ease forwards;
 }
 
+@keyframes error-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Lớp phủ ánh sáng phía trên */
+.error-card::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 200%;
+  height: 100%;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(201, 74, 74, 0.12),
+    transparent 70%
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* --------------------------------------------------------------------------
+   MÃ LỖI
+   -------------------------------------------------------------------------- */
 .error-code {
+  position: relative;
+  z-index: 1;
   font-size: 96px;
-  font-weight: 400;
+  font-weight: var(--fw-normal);
   line-height: 1;
   letter-spacing: -4px;
-  color: #fff;
+  color: var(--text-strong);
   font-family: var(--font-main);
+  user-select: none;
+  text-shadow: 0 0 32px rgba(201, 74, 74, 0.35);
 }
 
+/* --------------------------------------------------------------------------
+   TIÊU ĐỀ LỖI
+   -------------------------------------------------------------------------- */
 .error-title {
-  margin-top: 12px;
-  font-size: 14px;
+  position: relative;
+  z-index: 1;
+  margin-top: var(--space-md);
+  font-size: var(--fs-base);
   letter-spacing: 6px;
-  color: var(--muted);
+  color: var(--text-muted);
   text-transform: uppercase;
   font-family: var(--font-mono);
+  user-select: none;
 }
 
+/* --------------------------------------------------------------------------
+   MÔ TẢ LỖI
+   -------------------------------------------------------------------------- */
 .error-message {
-  margin-top: 20px;
-  font-size: 16px;
+  position: relative;
+  z-index: 1;
+  margin-top: var(--space-lg);
+  font-size: var(--fs-md);
   color: var(--text);
   font-style: italic;
+  line-height: 1.5;
+  max-width: 320px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
+/* --------------------------------------------------------------------------
+   NHÓM NÚT
+   -------------------------------------------------------------------------- */
 .error-actions {
-  margin-top: 28px;
+  position: relative;
+  z-index: 1;
+  margin-top: var(--space-2xl);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-md);
 }
 
+/* --------------------------------------------------------------------------
+   NÚT LỖI
+   -------------------------------------------------------------------------- */
 .error-button {
   display: inline-block;
-  padding: 12px 24px;
+  padding: var(--space-md) var(--space-xl);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   text-decoration: none;
   color: var(--text);
-  font-size: 13px;
+  font-size: var(--fs-sm);
   letter-spacing: 2px;
   text-transform: uppercase;
   font-family: var(--font-mono);
-  transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+  cursor: pointer;
+  user-select: none;
+  transition: color var(--transition-base),
+              border-color var(--transition-base),
+              background var(--transition-base),
+              transform var(--transition-fast);
 }
 
 .error-button:hover {
-  color: #fff;
-  border-color: #fff;
+  color: var(--text-strong);
+  border-color: var(--text-strong);
   background: rgba(255, 255, 255, 0.04);
 }
 
+.error-button:active {
+  transform: scale(0.98);
+}
+
+.error-button:focus-visible {
+  outline: 1px solid var(--text-strong);
+  outline-offset: 2px;
+}
+
+.error-button.primary {
+  border-color: var(--danger);
+  color: var(--text-strong);
+  background: rgba(201, 74, 74, 0.12);
+}
+
+.error-button.primary:hover {
+  border-color: #ff5a8a;
+  background: rgba(201, 74, 74, 0.2);
+}
+
+/* --------------------------------------------------------------------------
+   LIÊN KẾT HỖ TRỢ
+   -------------------------------------------------------------------------- */
 .error-help {
-  margin-top: 24px;
-  font-size: 12px;
-  color: var(--muted);
+  position: relative;
+  z-index: 1;
+  margin-top: var(--space-xl);
+  font-size: var(--fs-sm);
+  color: var(--text-muted);
   font-family: var(--font-mono);
   letter-spacing: 1px;
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
-  gap: 12px;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.error-help span {
+  text-transform: uppercase;
+  letter-spacing: 2px;
 }
 
 .error-help a {
   color: var(--text);
   text-decoration: none;
   border-bottom: 1px solid var(--border);
+  padding-bottom: 2px;
+  transition: color var(--transition-base),
+              border-color var(--transition-base);
 }
 
 .error-help a:hover {
-  color: #fff;
-  border-color: #fff;
+  color: var(--text-strong);
+  border-color: var(--text-strong);
 }
 
-/* Điều chỉnh cho màn hình nhỏ */
-@media (max-width: 420px) {
-  .error-code { font-size: 64px; }
-  .error-title { font-size: 12px; letter-spacing: 4px; }
-  .error-message { font-size: 14px; }
+/* --------------------------------------------------------------------------
+   MÃ LỖI THEO LOẠI
+   -------------------------------------------------------------------------- */
+.error-card[data-code="404"] .error-code {
+  text-shadow: 0 0 32px rgba(90, 122, 154, 0.4);
+}
+
+.error-card[data-code="500"] .error-code {
+  text-shadow: 0 0 32px rgba(201, 74, 74, 0.5);
+}
+
+.error-card[data-code="403"] .error-code {
+  text-shadow: 0 0 32px rgba(201, 162, 39, 0.4);
+}
+
+/* --------------------------------------------------------------------------
+   ĐIỀU CHỈNH MÀN HÌNH NHỎ
+   -------------------------------------------------------------------------- */
+@media (max-width: 480px) {
+  .error-card {
+    padding: var(--space-3xl) var(--space-lg);
+  }
+
+  .error-code {
+    font-size: 72px;
+    letter-spacing: -3px;
+  }
+
+  .error-title {
+    font-size: var(--fs-sm);
+    letter-spacing: 4px;
+  }
+
+  .error-message {
+    font-size: var(--fs-base);
+  }
+
+  .error-actions {
+    margin-top: var(--space-xl);
+  }
+
+  .error-button {
+    padding: var(--space-sm) var(--space-lg);
+    font-size: var(--fs-xs);
+  }
+
+  .error-help {
+    font-size: var(--fs-xs);
+    gap: var(--space-sm);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   ĐIỀU CHỈNH ĐIỆN THOẠI NHỎ
+   -------------------------------------------------------------------------- */
+@media (max-width: 360px) {
+  .error-code {
+    font-size: 56px;
+    letter-spacing: -2px;
+  }
+
+  .error-title {
+    font-size: 11px;
+    letter-spacing: 3px;
+  }
+
+  .error-message {
+    font-size: var(--fs-sm);
+  }
+
+  .error-button {
+    padding: 8px 16px;
+    font-size: 10px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   CHẾ ĐỘ TƯƠNG PHẢN CAO
+   -------------------------------------------------------------------------- */
+@media (prefers-contrast: high) {
+  .error-card {
+    border-width: 2px;
+  }
+
+  .error-code,
+  .error-title,
+  .error-message {
+    color: #ffffff;
+  }
+
+  .error-button {
+    border-color: #ffffff;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   CHẾ ĐỘ GIẢM CHUYỂN ĐỘNG
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .error-card {
+    animation: none;
+  }
+
+  .error-button {
+    transition: none;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   CHẾ ĐỘ IN ẤN
+   -------------------------------------------------------------------------- */
+@media print {
+  .error-card {
+    background: #ffffff;
+    border: 1px solid #cccccc;
+    box-shadow: none;
+  }
+
+  .error-card::before {
+    display: none;
+  }
+
+  .error-code,
+  .error-title,
+  .error-message {
+    color: #000000;
+    text-shadow: none;
+  }
+
+  .error-button,
+  .error-help {
+    display: none;
+  }
 }
