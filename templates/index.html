@@ -4,17 +4,34 @@
 
 {% block content %}
 
-  <!-- Khối đồng hồ -->
+  <!-- ============================================================
+       KHỐI ĐỒNG HỒ GIỜ VIỆT NAM
+       ============================================================ -->
   <section class="card clock-card">
-    <div class="clock-time">
-      <span id="time-hm">02:52</span>
-      <span class="clock-seconds" id="time-s">47</span>
+    <div class="clock-header">
+      <span class="clock-flag">🇻🇳</span>
+      <span class="clock-label">GIỜ VIỆT NAM</span>
+      <span class="clock-live" id="clock-live">● LIVE</span>
     </div>
-    <span class="clock-ampm" id="time-ampm">PM</span>
-    <div class="clock-date" id="date-text">TUESDAY · OCTOBER 6, 2026</div>
+    <div class="clock-time">
+      <span id="time-hm">--:--</span>
+      <span class="clock-seconds" id="time-s">--</span>
+    </div>
+    <div class="clock-date" id="date-text">ĐANG TẢI...</div>
+    <div class="clock-zone">Asia/Ho_Chi_Minh (UTC+07:00)</div>
+    <div class="clock-progress">
+      <div class="clock-progress-bar" id="clock-progress"></div>
+    </div>
+    <div class="clock-extra">
+      <span class="clock-extra-item">Ngày thứ <span id="clock-dayofyear">--</span>/365</span>
+      <span class="clock-extra-item">Tuần <span id="clock-week">--</span></span>
+      <span class="clock-extra-item">Quý <span id="clock-quarter">--</span></span>
+    </div>
   </section>
 
-  <!-- Khối giới thiệu -->
+  <!-- ============================================================
+       KHỐI GIỚI THIỆU
+       ============================================================ -->
   <section class="card intro-card">
     <div class="world-dots"></div>
 
@@ -35,9 +52,66 @@
       <div class="quote-bar"></div>
       <span>"Keep going and never give up.<span class="cursor">|</span>"</span>
     </div>
+
+    <div class="intro-stats">
+      <div class="intro-stat">
+        <span class="stat-value" id="stat-projects">--</span>
+        <span class="stat-label">Dự án</span>
+      </div>
+      <div class="intro-stat">
+        <span class="stat-value" id="stat-uptime">--</span>
+        <span class="stat-label">Uptime</span>
+      </div>
+      <div class="intro-stat">
+        <span class="stat-value" id="stat-visits">--</span>
+        <span class="stat-label">Lượt xem</span>
+      </div>
+    </div>
   </section>
 
-  <!-- Khối kết nối -->
+  <!-- ============================================================
+       KHỐI ĐĂNG NHẬP
+       ============================================================ -->
+  <section class="card login-card" id="loginCard">
+    <div class="login-title">ĐĂNG NHẬP</div>
+
+    <div class="login-form" id="loginForm">
+      <div class="login-field">
+        <label class="login-label" for="login-user">Tài khoản</label>
+        <input class="login-input" type="text" id="login-user"
+               placeholder="Nhập tài khoản..." autocomplete="username">
+      </div>
+
+      <div class="login-field">
+        <label class="login-label" for="login-pass">Mật khẩu</label>
+        <input class="login-input" type="password" id="login-pass"
+               placeholder="Nhập mật khẩu..." autocomplete="current-password">
+      </div>
+
+      <div class="login-remember">
+        <input type="checkbox" id="login-remember" checked>
+        <label for="login-remember">Ghi nhớ đăng nhập</label>
+      </div>
+
+      <div class="login-actions">
+        <button class="login-btn" id="btn-login">Đăng nhập</button>
+        <button class="login-btn ghost" id="btn-cancel">Hủy</button>
+      </div>
+
+      <div class="login-message" id="login-message"></div>
+    </div>
+
+    <div class="login-welcome" id="loginWelcome" style="display:none;">
+      <div class="login-avatar" id="login-avatar">U</div>
+      <div class="login-hello">Xin chào, <span id="login-username">--</span></div>
+      <div class="login-since">Đăng nhập lúc <span id="login-time">--</span></div>
+      <button class="login-btn ghost" id="btn-logout">Đăng xuất</button>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       KHỐI KẾT NỐI
+       ============================================================ -->
   <section class="card connect-card">
     <div class="connect-title">CONNECT</div>
 
@@ -51,6 +125,110 @@
         <span class="connect-label">Zalo</span>
         <span class="connect-value">0347635805</span>
       </a>
+
+      <a class="connect-link" href="mailto:huydoan633@gmail.com">
+        <span class="connect-label">Email</span>
+        <span class="connect-value">huydoan633@gmail.com</span>
+      </a>
+
+      <a class="connect-link" href="tel:0347635805">
+        <span class="connect-label">Phone</span>
+        <span class="connect-value">0347635805</span>
+      </a>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       KHỐI TRẠNG THÁI HỆ THỐNG
+       ============================================================ -->
+  <section class="card status-card">
+    <div class="status-title">TRẠNG THÁI</div>
+
+    <div class="status-list">
+      <div class="status-item">
+        <span class="status-label">API</span>
+        <span class="status-value" id="status-api">Đang kiểm tra...</span>
+      </div>
+
+      <div class="status-item">
+        <span class="status-label">Phiên bản</span>
+        <span class="status-value" id="status-version">--</span>
+      </div>
+
+      <div class="status-item">
+        <span class="status-label">Giờ máy chủ</span>
+        <span class="status-value" id="status-time">--</span>
+      </div>
+
+      <div class="status-item">
+        <span class="status-label">Múi giờ</span>
+        <span class="status-value" id="status-zone">--</span>
+      </div>
+
+      <div class="status-item">
+        <span class="status-label">Ping</span>
+        <span class="status-value" id="status-ping">--</span>
+      </div>
+
+      <div class="status-item">
+        <span class="status-label">Lần cuối</span>
+        <span class="status-value" id="status-lastcheck">--</span>
+      </div>
+    </div>
+
+    <div class="status-actions">
+      <button class="status-btn" id="btn-refresh">Làm mới</button>
+      <button class="status-btn" id="btn-health">Kiểm tra API</button>
+    </div>
+
+    <div class="status-output" id="status-output">Sẵn sàng.</div>
+  </section>
+
+  <!-- ============================================================
+       KHỐI API NHANH
+       ============================================================ -->
+  <section class="card api-card">
+    <div class="api-title">API NHANH</div>
+
+    <div class="api-buttons">
+      <button class="api-btn" data-api="/api/health">Health</button>
+      <button class="api-btn" data-api="/api/version">Version</button>
+      <button class="api-btn" data-api="/api/owner">Owner</button>
+      <button class="api-btn" data-api="/api/projects">Projects</button>
+      <button class="api-btn" data-api="/api/bfs/graph">BFS Graph</button>
+      <button class="api-btn" data-api="/api/spider/config">Spider Config</button>
+      <button class="api-btn" data-api="/api/spider/main">Spider Main</button>
+      <button class="api-btn" data-api="/api/spider/nodes">Spider Nodes</button>
+      <button class="api-btn" data-api="/api/profile/1">Profile #1</button>
+      <button class="api-btn" data-api="/status">Status</button>
+    </div>
+
+    <div class="api-output" id="api-output">Chọn một endpoint để xem kết quả...</div>
+  </section>
+
+  <!-- ============================================================
+       KHỐI DỰ ÁN TOÀN BỘ WEB
+       ============================================================ -->
+  <section class="card project-card">
+    <div class="project-title">DỰ ÁN TOÀN BỘ WEB</div>
+    <div class="project-list" id="project-list">
+      <div class="project-item">
+        <span class="project-name">Đang tải...</span>
+      </div>
+    </div>
+    <div class="project-meta" id="project-meta"></div>
+  </section>
+
+  <!-- ============================================================
+       KHỐI LỊCH SỬ
+       ============================================================ -->
+  <section class="card history-card">
+    <div class="history-title">LỊCH SỬ</div>
+    <div class="history-list" id="history-list">
+      <div class="history-empty">Chưa có hoạt động</div>
+    </div>
+    <div class="history-actions">
+      <button class="status-btn" id="btn-clear-history">Xóa lịch sử</button>
     </div>
   </section>
 
@@ -58,11 +236,1325 @@
 
 {% block scripts %}
 <script>
-  // Gán thông tin chủ sở hữu từ máy chủ nếu có
+(function () {
+  'use strict';
+
+  // ================================================================
+  // CẤU HÌNH
+  // ================================================================
+  var VN_TIMEZONE = 'Asia/Ho_Chi_Minh';
+  var PING_INTERVAL = 30000;
+  var HISTORY_MAX = 20;
+
+  // ================================================================
+  // THÔNG TIN CHỦ SỞ HỮU
+  // ================================================================
   window.OWNER = {
     name: "Doãn Trần Bảo Huy",
     telegram: "https://t.me/baohuyno1",
-    zalo: "https://zalo.me/0347635805"
+    zalo: "https://zalo.me/0347635805",
+    email: "huydoan633@gmail.com",
+    phone: "0347635805"
   };
+
+  // ================================================================
+  // HÀM TIỆN ÍCH
+  // ================================================================
+  function ready(fn) {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', fn);
+    } else {
+      fn();
+    }
+  }
+
+  function escapeHtml(text) {
+    var div = document.createElement('div');
+    div.appendChild(document.createTextNode(String(text)));
+    return div.innerHTML;
+  }
+
+  function pad2(n) {
+    return String(n).padStart(2, '0');
+  }
+
+  // ================================================================
+  // KHỞI TẠO KHI DOM SẴN SÀNG
+  // ================================================================
+  ready(function () {
+
+    // ================================================================
+    // ĐỒNG HỒ GIỜ VIỆT NAM
+    // ================================================================
+    function updateClock() {
+      var now = new Date();
+
+      var parts;
+      try {
+        parts = new Intl.DateTimeFormat('vi-VN', {
+          timeZone: VN_TIMEZONE,
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: false,
+          weekday: 'long',
+          day: '2-digit',
+          month: 'long',
+          year: 'numeric'
+        }).formatToParts(now);
+      } catch (e) {
+        parts = null;
+      }
+
+      var hmEl = document.getElementById('time-hm');
+      var sEl = document.getElementById('time-s');
+      var dateEl = document.getElementById('date-text');
+
+      var vnHour = 0, vnMin = 0, vnSec = 0;
+      var vnDay = 1, vnMonth = 1, vnYear = 2026;
+
+      if (parts) {
+        var map = {};
+        for (var i = 0; i < parts.length; i++) {
+          map[parts[i].type] = parts[i].value;
+        }
+
+        vnHour = parseInt(map.hour, 10) || 0;
+        vnMin = parseInt(map.minute, 10) || 0;
+        vnSec = parseInt(map.second, 10) || 0;
+        vnDay = parseInt(map.day, 10) || 1;
+        vnMonth = 1;
+        vnYear = parseInt(map.year, 10) || 2026;
+
+        // Ánh xạ tháng tiếng Việt
+        var monthMap = {
+          'tháng 1': 1, 'tháng 2': 2, 'tháng 3': 3,
+          'tháng 4': 4, 'tháng 5': 5, 'tháng 6': 6,
+          'tháng 7': 7, 'tháng 8': 8, 'tháng 9': 9,
+          'tháng 10': 10, 'tháng 11': 11, 'tháng 12': 12,
+          'tháng một': 1, 'tháng hai': 2, 'tháng ba': 3,
+          'tháng tư': 4, 'tháng năm': 5, 'tháng sáu': 6,
+          'tháng bảy': 7, 'tháng tám': 8, 'tháng chín': 9,
+          'tháng mười': 10, 'tháng mười một': 11, 'tháng mười hai': 12
+        };
+        var monthKey = (map.month || '').toLowerCase();
+        vnMonth = monthMap[monthKey] || 1;
+
+        if (hmEl) hmEl.textContent = pad2(vnHour) + ':' + pad2(vnMin);
+        if (sEl) sEl.textContent = pad2(vnSec);
+        if (dateEl) {
+          dateEl.textContent =
+            (map.weekday || '').toUpperCase() + ' · ' +
+            pad2(vnDay) + ' ' + (map.month || '') + ', ' +
+            vnYear;
+        }
+      } else {
+        // Dự phòng
+        var vnOffset = 7 * 60;
+        var localOffset = now.getTimezoneOffset();
+        var vnTime = new Date(now.getTime() + (localOffset + vnOffset) * 60000);
+        vnHour = vnTime.getHours();
+        vnMin = vnTime.getMinutes();
+        vnSec = vnTime.getSeconds();
+        vnDay = vnTime.getDate();
+        vnMonth = vnTime.getMonth() + 1;
+        vnYear = vnTime.getFullYear();
+
+        if (hmEl) hmEl.textContent = pad2(vnHour) + ':' + pad2(vnMin);
+        if (sEl) sEl.textContent = pad2(vnSec);
+        if (dateEl) {
+          dateEl.textContent = pad2(vnDay) + '/' + pad2(vnMonth) + '/' + vnYear;
+        }
+      }
+
+      // Thanh tiến trình trong ngày
+      var progressEl = document.getElementById('clock-progress');
+      if (progressEl) {
+        var totalSec = vnHour * 3600 + vnMin * 60 + vnSec;
+        var percent = (totalSec / 86400) * 100;
+        progressEl.style.width = percent.toFixed(2) + '%';
+      }
+
+      // Ngày thứ bao nhiêu trong năm
+      var startOfYear = new Date(vnYear, 0, 1);
+      var currentDate = new Date(vnYear, vnMonth - 1, vnDay);
+      var dayOfYear = Math.floor((currentDate - startOfYear) / 86400000) + 1;
+      var doyEl = document.getElementById('clock-dayofyear');
+      if (doyEl) doyEl.textContent = dayOfYear;
+
+      // Tuần trong năm
+      var weekEl = document.getElementById('clock-week');
+      if (weekEl) {
+        var weekNum = Math.ceil(dayOfYear / 7);
+        weekEl.textContent = weekNum;
+      }
+
+      // Quý
+      var quarterEl = document.getElementById('clock-quarter');
+      if (quarterEl) {
+        quarterEl.textContent = 'Q' + Math.ceil(vnMonth / 3);
+      }
+    }
+
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    // ================================================================
+    // LỊCH SỬ HOẠT ĐỘNG
+    // ================================================================
+    var historyItems = [];
+
+    function loadHistory() {
+      try {
+        var raw = localStorage.getItem('app_history');
+        if (raw) historyItems = JSON.parse(raw);
+        if (!Array.isArray(historyItems)) historyItems = [];
+      } catch (e) {
+        historyItems = [];
+      }
+      renderHistory();
+    }
+
+    function saveHistory() {
+      try {
+        localStorage.setItem('app_history', JSON.stringify(historyItems));
+      } catch (e) {}
+    }
+
+    function addHistory(text) {
+      var now = new Date();
+      var time = pad2(now.getHours()) + ':' + pad2(now.getMinutes()) + ':' + pad2(now.getSeconds());
+      historyItems.unshift({ time: time, text: text });
+      if (historyItems.length > HISTORY_MAX) {
+        historyItems = historyItems.slice(0, HISTORY_MAX);
+      }
+      saveHistory();
+      renderHistory();
+    }
+
+    function renderHistory() {
+      var list = document.getElementById('history-list');
+      if (!list) return;
+
+      if (historyItems.length === 0) {
+        list.innerHTML = '<div class="history-empty">Chưa có hoạt động</div>';
+        return;
+      }
+
+      var html = '';
+      for (var i = 0; i < historyItems.length; i++) {
+        var h = historyItems[i];
+        html += '<div class="history-item">' +
+                  '<span class="history-time">' + escapeHtml(h.time) + '</span>' +
+                  '<span class="history-text">' + escapeHtml(h.text) + '</span>' +
+                '</div>';
+      }
+      list.innerHTML = html;
+    }
+
+    var btnClearHistory = document.getElementById('btn-clear-history');
+    if (btnClearHistory) {
+      btnClearHistory.addEventListener('click', function () {
+        historyItems = [];
+        saveHistory();
+        renderHistory();
+      });
+    }
+
+    loadHistory();
+
+    // ================================================================
+    // ĐĂNG NHẬP
+    // ================================================================
+    var loginForm = document.getElementById('loginForm');
+    var loginWelcome = document.getElementById('loginWelcome');
+    var loginUser = document.getElementById('login-user');
+    var loginPass = document.getElementById('login-pass');
+    var loginMsg = document.getElementById('login-message');
+    var loginUsername = document.getElementById('login-username');
+    var loginAvatar = document.getElementById('login-avatar');
+    var loginTime = document.getElementById('login-time');
+    var loginRemember = document.getElementById('login-remember');
+    var btnLogin = document.getElementById('btn-login');
+    var btnCancel = document.getElementById('btn-cancel');
+    var btnLogout = document.getElementById('btn-logout');
+
+    function showLoginMessage(text, type) {
+      if (!loginMsg) return;
+      loginMsg.textContent = text;
+      loginMsg.className = 'login-message ' + (type || '');
+    }
+
+    function formatNow() {
+      var d = new Date();
+      return pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ':' + pad2(d.getSeconds());
+    }
+
+    function doLogin() {
+      var u = (loginUser && loginUser.value || '').trim();
+      var p = (loginPass && loginPass.value || '').trim();
+
+      if (!u || !p) {
+        showLoginMessage('Vui lòng nhập tài khoản và mật khẩu.', 'error');
+        addHistory('Đăng nhập thất bại: thiếu thông tin');
+        return;
+      }
+
+      if (u.length < 3) {
+        showLoginMessage('Tài khoản phải có ít nhất 3 ký tự.', 'error');
+        addHistory('Đăng nhập thất bại: tài khoản quá ngắn');
+        return;
+      }
+
+      if (p.length < 3) {
+        showLoginMessage('Mật khẩu phải có ít nhất 3 ký tự.', 'error');
+        addHistory('Đăng nhập thất bại: mật khẩu quá ngắn');
+        return;
+      }
+
+      // Lưu trạng thái đăng nhập
+      var remember = loginRemember && loginRemember.checked;
+      try {
+        if (remember) {
+          localStorage.setItem('logged_user', u);
+          localStorage.setItem('logged_time', formatNow());
+        } else {
+          sessionStorage.setItem('logged_user', u);
+          sessionStorage.setItem('logged_time', formatNow());
+        }
+      } catch (e) {}
+
+      showLoginMessage('Đăng nhập thành công.', 'ok');
+      addHistory('Đăng nhập: ' + u);
+
+      setTimeout(function () {
+        renderLoggedIn(u, formatNow());
+      }, 400);
+    }
+
+    function renderLoggedIn(username, time) {
+      if (loginForm) loginForm.style.display = 'none';
+      if (loginWelcome) loginWelcome.style.display = 'flex';
+      if (loginUsername) loginUsername.textContent = username;
+      if (loginAvatar) loginAvatar.textContent = username.charAt(0).toUpperCase();
+      if (loginTime) loginTime.textContent = time || '--';
+    }
+
+    function renderLoggedOut() {
+      if (loginForm) loginForm.style.display = 'block';
+      if (loginWelcome) loginWelcome.style.display = 'none';
+      if (loginUser) loginUser.value = '';
+      if (loginPass) loginPass.value = '';
+      showLoginMessage('', '');
+      try {
+        localStorage.removeItem('logged_user');
+        localStorage.removeItem('logged_time');
+        sessionStorage.removeItem('logged_user');
+        sessionStorage.removeItem('logged_time');
+      } catch (e) {}
+      addHistory('Đăng xuất');
+    }
+
+    if (btnLogin) btnLogin.addEventListener('click', doLogin);
+
+    if (loginPass) {
+      loginPass.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') doLogin();
+      });
+    }
+
+    if (loginUser) {
+      loginUser.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' && loginPass) loginPass.focus();
+      });
+    }
+
+    if (btnCancel) {
+      btnCancel.addEventListener('click', function () {
+        if (loginUser) loginUser.value = '';
+        if (loginPass) loginPass.value = '';
+        showLoginMessage('', '');
+      });
+    }
+
+    if (btnLogout) {
+      btnLogout.addEventListener('click', function () {
+        renderLoggedOut();
+      });
+    }
+
+    // Khôi phục trạng thái đăng nhập
+    try {
+      var savedUser = localStorage.getItem('logged_user') || sessionStorage.getItem('logged_user');
+      var savedTime = localStorage.getItem('logged_time') || sessionStorage.getItem('logged_time');
+      if (savedUser) renderLoggedIn(savedUser, savedTime || '--');
+    } catch (e) {}
+
+    // ================================================================
+    // GỌI API
+    // ================================================================
+    function callApi(url, outputEl) {
+      if (!outputEl) return;
+
+      outputEl.textContent = 'Đang tải: ' + url + ' ...';
+      outputEl.classList.remove('error', 'ok');
+
+      var start = performance.now();
+
+      fetch(url, {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' },
+        cache: 'no-store'
+      })
+      .then(function (res) {
+        return res.json().then(function (data) {
+          return { ok: res.ok, status: res.status, data: data };
+        });
+      })
+      .then(function (result) {
+        var elapsed = Math.round(performance.now() - start);
+
+        if (result.ok) {
+          outputEl.classList.add('ok');
+        } else {
+          outputEl.classList.add('error');
+        }
+        outputEl.textContent =
+          'HTTP ' + result.status + ' · ' + elapsed + 'ms\n\n' +
+          JSON.stringify(result.data, null, 2);
+
+        addHistory('API: ' + url + ' (' + result.status + ')');
+      })
+      .catch(function (err) {
+        outputEl.classList.add('error');
+        outputEl.textContent = 'Lỗi kết nối: ' + err.message;
+        addHistory('Lỗi API: ' + url);
+      });
+    }
+
+    // ================================================================
+    // NÚT API NHANH
+    // ================================================================
+    var apiButtons = document.querySelectorAll('.api-btn');
+    var apiOutput = document.getElementById('api-output');
+
+    for (var i = 0; i < apiButtons.length; i++) {
+      (function (btn) {
+        btn.addEventListener('click', function () {
+          var url = btn.getAttribute('data-api');
+          if (!url) return;
+
+          for (var j = 0; j < apiButtons.length; j++) {
+            apiButtons[j].classList.remove('active');
+          }
+          btn.classList.add('active');
+
+          callApi(url, apiOutput);
+        });
+      })(apiButtons[i]);
+    }
+
+    // ================================================================
+    // KIỂM TRA API
+    // ================================================================
+    function checkHealth() {
+      var apiEl = document.getElementById('status-api');
+      var out = document.getElementById('status-output');
+      var pingEl = document.getElementById('status-ping');
+      var lastEl = document.getElementById('status-lastcheck');
+
+      if (out) out.textContent = 'Đang kiểm tra API...';
+
+      var start = performance.now();
+
+      fetch('/api/health', { cache: 'no-store' })
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        var elapsed = Math.round(performance.now() - start);
+        var ok = false;
+        var version = '';
+
+        if (data && data.ok && data.data) {
+          ok = data.data.status === 'ok';
+          version = data.data.version || '';
+        } else if (data && data.status === 'ok') {
+          ok = true;
+          version = data.version || '';
+        }
+
+        if (apiEl) {
+          apiEl.textContent = ok ? 'Online' : 'Offline';
+          apiEl.className = 'status-value ' + (ok ? 'online' : 'offline');
+        }
+
+        if (pingEl) {
+          pingEl.textContent = elapsed + ' ms';
+          pingEl.className = 'status-value ' + (elapsed < 500 ? 'online' : 'offline');
+        }
+
+        if (lastEl) {
+          lastEl.textContent = formatNow();
+        }
+
+        if (out) {
+          out.textContent = ok
+            ? 'API hoạt động bình thường' + (version ? ' (v' + version + ')' : '')
+            : 'API không phản hồi đúng';
+        }
+      })
+      .catch(function (err) {
+        if (apiEl) {
+          apiEl.textContent = 'Offline';
+          apiEl.className = 'status-value offline';
+        }
+        if (pingEl) {
+          pingEl.textContent = '--';
+          pingEl.className = 'status-value';
+        }
+        if (lastEl) lastEl.textContent = formatNow();
+        if (out) out.textContent = 'Lỗi kết nối: ' + err.message;
+      });
+    }
+
+    // ================================================================
+    // LẤY PHIÊN BẢN
+    // ================================================================
+    function loadVersion() {
+      var el = document.getElementById('status-version');
+      if (!el) return;
+
+      fetch('/api/version', { cache: 'no-store' })
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        var version = '--';
+        if (data && data.ok && data.data && data.data.version) {
+          version = data.data.version;
+        } else if (data && data.version) {
+          version = data.version;
+        }
+        el.textContent = version;
+      })
+      .catch(function () {
+        el.textContent = '--';
+      });
+    }
+
+    // ================================================================
+    // LẤY GIỜ MÁY CHỦ
+    // ================================================================
+    function loadServerTime() {
+      var timeEl = document.getElementById('status-time');
+      var zoneEl = document.getElementById('status-zone');
+      if (!timeEl) return;
+
+      fetch('/status', { cache: 'no-store' })
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        if (data && data.time) {
+          var d = new Date(data.time);
+          try {
+            timeEl.textContent = d.toLocaleString('vi-VN', {
+              timeZone: VN_TIMEZONE,
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit',
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric'
+            });
+          } catch (e) {
+            timeEl.textContent = d.toISOString();
+          }
+
+          if (zoneEl) {
+            zoneEl.textContent = VN_TIMEZONE + ' (UTC+07:00)';
+          }
+        } else {
+          timeEl.textContent = '--';
+          if (zoneEl) zoneEl.textContent = '--';
+        }
+      })
+      .catch(function () {
+        timeEl.textContent = '--';
+        if (zoneEl) zoneEl.textContent = '--';
+      });
+    }
+
+    setInterval(function () {
+      loadServerTime();
+    }, PING_INTERVAL);
+
+    // ================================================================
+    // TẢI DỰ ÁN TOÀN BỘ WEB
+    // ================================================================
+    function loadProjects() {
+      var list = document.getElementById('project-list');
+      var meta = document.getElementById('project-meta');
+      var statProjects = document.getElementById('stat-projects');
+      if (!list) return;
+
+      fetch('/api/projects', { cache: 'no-store' })
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        var items = [];
+        var count = 0;
+
+        if (data && data.ok && data.data && Array.isArray(data.data.items)) {
+          items = data.data.items;
+          count = data.data.count || items.length;
+        } else if (data && Array.isArray(data.items)) {
+          items = data.items;
+          count = data.count || items.length;
+        }
+
+        if (statProjects) statProjects.textContent = count;
+
+        if (items.length === 0) {
+          list.innerHTML = '<div class="project-item"><span class="project-name">Không có dự án</span></div>';
+          if (meta) meta.textContent = '';
+          return;
+        }
+
+        var html = '';
+        for (var i = 0; i < items.length; i++) {
+          var p = items[i];
+          var tagClass = (p.status === 'done') ? 'done' : 'wip';
+          var tagText = (p.status === 'done') ? 'Hoàn thành' : 'Đang làm';
+
+          html += '<div class="project-item">' +
+                    '<span class="project-name">' + escapeHtml(p.name || 'Không tên') + '</span>' +
+                    '<span class="project-tag ' + tagClass + '">' + tagText + '</span>' +
+                  '</div>';
+        }
+        list.innerHTML = html;
+
+        if (meta) {
+          meta.textContent = 'Tổng: ' + count + ' dự án · Nguồn: /api/projects';
+        }
+      })
+      .catch(function () {
+        list.innerHTML = '<div class="project-item"><span class="project-name">Lỗi tải dự án</span></div>';
+        if (meta) meta.textContent = '';
+      });
+    }
+
+    // ================================================================
+    // ĐẾM LƯỢT XEM
+    // ================================================================
+    function trackVisits() {
+      var el = document.getElementById('stat-visits');
+      if (!el) return;
+
+      var visits = 0;
+      try {
+        visits = parseInt(localStorage.getItem('visit_count') || '0', 10);
+        visits += 1;
+        localStorage.setItem('visit_count', String(visits));
+      } catch (e) {
+        visits = 1;
+      }
+      el.textContent = visits;
+    }
+
+    // ================================================================
+    // UPTIME
+    // ================================================================
+    var appStart = Date.now();
+    function updateUptime() {
+      var el = document.getElementById('stat-uptime');
+      if (!el) return;
+
+      var elapsed = Math.floor((Date.now() - appStart) / 1000);
+      var h = Math.floor(elapsed / 3600);
+      var m = Math.floor((elapsed % 3600) / 60);
+      var s = elapsed % 60;
+
+      if (h > 0) {
+        el.textContent = h + 'h ' + pad2(m) + 'm';
+      } else if (m > 0) {
+        el.textContent = m + 'm ' + pad2(s) + 's';
+      } else {
+        el.textContent = s + 's';
+      }
+    }
+
+    setInterval(updateUptime, 1000);
+    updateUptime();
+
+    // ================================================================
+    // GẮN SỰ KIỆN NÚT TRẠNG THÁI
+    // ================================================================
+    var btnRefresh = document.getElementById('btn-refresh');
+    var btnHealth = document.getElementById('btn-health');
+
+    if (btnRefresh) {
+      btnRefresh.addEventListener('click', function () {
+        checkHealth();
+        loadVersion();
+        loadServerTime();
+        loadProjects();
+        addHistory('Làm mới toàn bộ');
+      });
+    }
+
+    if (btnHealth) {
+      btnHealth.addEventListener('click', function () {
+        checkHealth();
+        addHistory('Kiểm tra API thủ công');
+      });
+    }
+
+    // ================================================================
+    // PHÍM TẮT
+    // ================================================================
+    document.addEventListener('keydown', function (e) {
+      // Ctrl + R: làm mới dữ liệu
+      if (e.ctrlKey && e.key.toLowerCase() === 'r') {
+        e.preventDefault();
+        checkHealth();
+        loadVersion();
+        loadServerTime();
+        loadProjects();
+        addHistory('Phím tắt: Ctrl+R');
+      }
+
+      // Ctrl + L: focus đăng nhập
+      if (e.ctrlKey && e.key.toLowerCase() === 'l') {
+        e.preventDefault();
+        if (loginUser && loginForm && loginForm.style.display !== 'none') {
+          loginUser.focus();
+        }
+      }
+    });
+
+    // ================================================================
+    // KHỞI TẠO
+    // ================================================================
+    checkHealth();
+    loadVersion();
+    loadServerTime();
+    loadProjects();
+    trackVisits();
+
+    addHistory('Tải trang thành công');
+    console.log('[App] Đã khởi động · Giờ VN · Nút đăng nhập');
+
+  });
+})();
 </script>
+
+<style>
+  /* ==================================================================
+     ĐỒNG HỒ VIỆT NAM
+     ================================================================== */
+  .clock-card {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .clock-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 14px;
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+  }
+
+  .clock-flag {
+    font-size: 18px;
+    line-height: 1;
+  }
+
+  .clock-label {
+    color: #ffd75a;
+    font-weight: 700;
+  }
+
+  .clock-live {
+    color: #5affa8;
+    animation: pulse-live 1.5s ease-in-out infinite;
+    font-size: 10px;
+  }
+
+  @keyframes pulse-live {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .clock-time {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 6px;
+    font-family: var(--font-mono);
+    color: var(--text-strong, #ffffff);
+    text-shadow: 0 0 24px rgba(192, 96, 255, 0.6);
+    margin-bottom: 8px;
+  }
+
+  #time-hm {
+    font-size: clamp(2.4rem, 8vw, 4rem);
+    font-weight: bold;
+    letter-spacing: 2px;
+  }
+
+  .clock-seconds {
+    font-size: clamp(1rem, 3vw, 1.4rem);
+    color: #5ad7ff;
+    letter-spacing: 2px;
+  }
+
+  .clock-date {
+    text-align: center;
+    font-size: 12px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--text-muted, rgba(255,255,255,0.6));
+    font-family: var(--font-mono);
+  }
+
+  .clock-zone {
+    margin-top: 8px;
+    text-align: center;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--text-dim, rgba(255,255,255,0.3));
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+  }
+
+  .clock-progress {
+    margin-top: 14px;
+    height: 3px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .clock-progress-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #c060ff, #5ad7ff, #5affa8);
+    border-radius: 2px;
+    transition: width 1s linear;
+    box-shadow: 0 0 8px rgba(192, 96, 255, 0.5);
+  }
+
+  .clock-extra {
+    margin-top: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 16px;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--text-dim, rgba(255,255,255,0.3));
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+  }
+
+  .clock-extra-item span {
+    color: #5ad7ff;
+    font-weight: 700;
+  }
+
+  /* ==================================================================
+     GIỚI THIỆU
+     ================================================================== */
+  .intro-card {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .intro-stats {
+    margin-top: 20px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border, rgba(255,255,255,0.15));
+  }
+
+  .intro-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .intro-stat .stat-value {
+    font-size: 20px;
+    font-weight: bold;
+    color: #c060ff;
+    font-family: var(--font-mono);
+    text-shadow: 0 0 12px rgba(192, 96, 255, 0.5);
+  }
+
+  .intro-stat .stat-label {
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-dim, rgba(255,255,255,0.3));
+    font-family: var(--font-mono);
+  }
+
+  /* ==================================================================
+     ĐĂNG NHẬP
+     ================================================================== */
+  .login-card {
+    position: relative;
+  }
+
+  .login-title {
+    font-size: 12px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--text-muted, rgba(255,255,255,0.6));
+    font-family: var(--font-mono);
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border, rgba(255,255,255,0.15));
+  }
+
+  .login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .login-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .login-label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-dim, rgba(255,255,255,0.3));
+    font-family: var(--font-mono);
+  }
+
+  .login-input {
+    padding: 10px 14px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid var(--border, rgba(255,255,255,0.15));
+    border-radius: 8px;
+    color: var(--text, #e0e0e0);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .login-input:focus {
+    border-color: #c060ff;
+    background: rgba(192, 96, 255, 0.05);
+    box-shadow: 0 0 12px rgba(192, 96, 255, 0.25);
+  }
+
+  .login-input::placeholder {
+    color: var(--text-dim, rgba(255,255,255,0.3));
+  }
+
+  .login-remember {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: var(--text-muted, rgba(255,255,255,0.6));
+    font-family: var(--font-mono);
+  }
+
+  .login-remember input[type="checkbox"] {
+    accent-color: #c060ff;
+    cursor: pointer;
+  }
+
+  .login-remember label {
+    cursor: pointer;
+  }
+
+  .login-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 4px;
+  }
+
+  .login-btn {
+    flex: 1;
+    padding: 10px 16px;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-family: var(--font-mono);
+    color: #ffffff;
+    background: rgba(192, 96, 255, 0.15);
+    border: 1px solid #c060ff;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+  }
+
+  .login-btn:hover {
+    background: rgba(192, 96, 255, 0.25);
+    box-shadow: 0 0 16px rgba(192, 96, 255, 0.3);
+  }
+
+  .login-btn:active {
+    transform: scale(0.98);
+  }
+
+  .login-btn.ghost {
+    background: transparent;
+    color: var(--text-muted, rgba(255,255,255,0.6));
+    border-color: var(--border, rgba(255,255,255,0.15));
+  }
+
+  .login-btn.ghost:hover {
+    color: var(--text-strong, #ffffff);
+    border-color: var(--text-strong, #ffffff);
+    background: rgba(255, 255, 255, 0.04);
+    box-shadow: none;
+  }
+
+  .login-message {
+    margin-top: 6px;
+    font-size: 11px;
+    letter-spacing: 1px;
+    font-family: var(--font-mono);
+    min-height: 16px;
+    text-align: center;
+  }
+
+  .login-message.error {
+    color: #ff5a8a;
+  }
+
+  .login-message.ok {
+    color: #5affa8;
+  }
+
+  .login-welcome {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+  }
+
+  .login-avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #c060ff, #5ad7ff);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    font-weight: bold;
+    color: #ffffff;
+    box-shadow: 0 0 28px rgba(192, 96, 255, 0.55);
+    animation: avatar-glow 3s ease-in-out infinite;
+  }
+
+  @keyframes avatar-glow {
+    0%, 100% { box-shadow: 0 0 28px rgba(192, 96, 255, 0.55); }
+    50% { box-shadow: 0 0 40px rgba(90, 215, 255, 0.7); }
+  }
+
+  .login-hello {
+    font-size: 14px;
+    letter-spacing: 1px;
+    color: var(--text, #e0e0e0);
+    font-family: var(--font-mono);
+  }
+
+  .login-hello span {
+    color: #c060ff;
+    font-weight: bold;
+  }
+
+  .login-since {
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--text-dim, rgba(255,255,255,0.3));
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+  }
+
+  .login-since span {
+    color: #5ad7ff;
+  }
+
+  /* ==================================================================
+     LỊCH SỬ
+     ================================================================== */
+  .history-card {
+    position: relative;
+  }
+
+  .history-title {
+    font-size: 12px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--text-muted, rgba(255,255,255,0.6));
+    font-family: var(--font-mono);
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border, rgba(255,255,255,0.15));
+  }
+
+  .history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 260px;
+    overflow-y: auto;
+  }
+
+  .history-list::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .history-list::-webkit-scrollbar-thumb {
+    background: var(--border, rgba(255,255,255,0.15));
+    border-radius: 3px;
+  }
+
+  .history-item {
+    display: flex;
+    gap: 12px;
+    padding: 8px 12px;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid var(--border, rgba(255,255,255,0.15));
+    border-radius: 6px;
+    font-size: 11px;
+    font-family: var(--font-mono);
+  }
+
+  .history-time {
+    color: #5ad7ff;
+    letter-spacing: 1px;
+    flex-shrink: 0;
+  }
+
+  .history-text {
+    color: var(--text-muted, rgba(255,255,255,0.6));
+    word-break: break-word;
+  }
+
+  .history-empty {
+    padding: 20px;
+    text-align: center;
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--text-dim, rgba(255,255,255,0.3));
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+  }
+
+  .history-actions {
+    margin-top: 12px;
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  /* ==================================================================
+     TRẠNG THÁI ONLINE/OFFLINE
+     ================================================================== */
+  .status-value.online {
+    color: #5affa8;
+  }
+
+  .status-value.offline {
+    color: #ff5a8a;
+  }
+
+  /* ==================================================================
+     DỰ ÁN
+     ================================================================== */
+  .project-tag {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-family: var(--font-mono);
+  }
+
+  .project-tag.done {
+    color: #5affa8;
+    border: 1px solid rgba(90, 255, 168, 0.3);
+    background: rgba(90, 255, 168, 0.05);
+  }
+
+  .project-tag.wip {
+    color: #ffd75a;
+    border: 1px solid rgba(255, 215, 90, 0.3);
+    background: rgba(255, 215, 90, 0.05);
+  }
+
+  .project-meta {
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border, rgba(255,255,255,0.15));
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--text-dim, rgba(255,255,255,0.3));
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+  }
+
+  /* ==================================================================
+     NÚT API ACTIVE
+     ================================================================== */
+  .api-btn.active {
+    color: #c060ff;
+    border-color: #c060ff;
+    background: rgba(192, 96, 255, 0.15);
+    box-shadow: 0 0 12px rgba(192, 96, 255, 0.3);
+  }
+
+  /* ==================================================================
+     RESPONSIVE
+     ================================================================== */
+  @media (max-width: 480px) {
+    .clock-header {
+      font-size: 9px;
+      letter-spacing: 2px;
+    }
+
+    .clock-flag {
+      font-size: 15px;
+    }
+
+    .clock-live {
+      font-size: 9px;
+    }
+
+    .clock-extra {
+      gap: 10px;
+      font-size: 9px;
+      letter-spacing: 1px;
+    }
+
+    .intro-stats {
+      gap: 8px;
+    }
+
+    .intro-stat .stat-value {
+      font-size: 16px;
+    }
+
+    .intro-stat .stat-label {
+      font-size: 8px;
+      letter-spacing: 1px;
+    }
+
+    .login-avatar {
+      width: 52px;
+      height: 52px;
+      font-size: 22px;
+    }
+
+    .login-hello {
+      font-size: 12px;
+    }
+
+    .login-btn {
+      padding: 9px 12px;
+      font-size: 10px;
+      letter-spacing: 1px;
+    }
+
+    .history-item {
+      font-size: 10px;
+      padding: 6px 10px;
+    }
+
+    .history-time {
+      font-size: 9px;
+    }
+  }
+
+  @media (max-width: 360px) {
+    .clock-extra {
+      font-size: 8px;
+    }
+
+    .clock-date {
+      font-size: 10px;
+      letter-spacing: 2px;
+    }
+
+    .intro-stat .stat-value {
+      font-size: 14px;
+    }
+  }
+
+  /* ==================================================================
+     GIẢM CHUYỂN ĐỘNG
+     ================================================================== */
+  @media (prefers-reduced-motion: reduce) {
+    .clock-live,
+    .login-avatar {
+      animation: none;
+    }
+
+    .login-btn,
+    .clock-progress-bar {
+      transition: none;
+    }
+  }
+
+  /* ==================================================================
+     TƯƠNG PHẢN CAO
+     ================================================================== */
+  @media (prefers-contrast: high) {
+    .login-input,
+    .login-btn,
+    .history-item {
+      border-width: 2px;
+    }
+
+    .clock-zone,
+    .clock-extra,
+    .history-time {
+      color: #ffffff;
+    }
+  }
+
+  /* ==================================================================
+     IN ẤN
+     ================================================================== */
+  @media print {
+    .clock-progress,
+    .clock-extra,
+    .login-card,
+    .api-card,
+    .status-card,
+    .history-card {
+      display: none;
+    }
+
+    .clock-time,
+    .clock-date,
+    .intro-card,
+    .connect-card,
+    .project-card {
+      color: #000000;
+      text-shadow: none;
+      background: #ffffff;
+      border: 1px solid #cccccc;
+    }
+  }
+</style>
 {% endblock %}
