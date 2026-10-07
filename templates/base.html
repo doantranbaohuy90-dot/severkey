@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ locale|default('vi') }}">
+<html lang="vi">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -9,39 +9,107 @@
 <meta name="description" content="Hồ sơ cá nhân của Doãn Trần Bảo Huy">
 <meta name="author" content="Doãn Trần Bảo Huy">
 <meta name="theme-color" content="#0a0a0a">
-<title>{% block title %}Hồ sơ của tôi{% endblock %}</title>
-
-{% set v = "20261006" %}
-
-<link rel="stylesheet" href="{{ url_for('static', filename='css/reset.css') }}?v={{ v }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/variables.css') }}?v={{ v }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/layout.css') }}?v={{ v }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/clock.css') }}?v={{ v }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/intro.css') }}?v={{ v }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/connect.css') }}?v={{ v }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/error.css') }}?v={{ v }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/spider.css') }}?v={{ v }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/responsive.css') }}?v={{ v }}">
-
+<title>Hồ sơ mới</title>
 <style>
-  /* Nền canvas nhện toàn màn hình */
-  #bg-spider {
-    position: fixed;
-    inset: 0;
-    width: 100vw;
-    height: 100vh;
-    z-index: 0;
-    pointer-events: none;
-    background: transparent;
-  }
+/* ===== RESET CƠ BẢN ===== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
 
-  /* Đẩy nội dung lên trên canvas */
-  body > .nav,
-  body > .container,
-  body > .footer {
-    position: relative;
-    z-index: 2;
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #0a0a12;
+  color: #e0e0e0;
+  font-family: 'Courier New', monospace;
+}
+
+/* ===== CANVAS NỀN ===== */
+#bg-spider {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  pointer-events: none;
+  background: transparent;
+}
+
+/* ===== LỚP NỘI DUNG ===== */
+.container {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 24px;
+  text-align: center;
+}
+
+h1 {
+  font-size: clamp(1.8rem, 5vw, 3rem);
+  letter-spacing: 2px;
+  color: #c060ff;
+  text-shadow: 0 0 12px rgba(192, 96, 255, 0.5);
+  margin-bottom: 8px;
+}
+
+.subtitle {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 32px;
+  letter-spacing: 1px;
+}
+
+/* ===== ĐỒNG HỒ ===== */
+#clock {
+  font-size: clamp(2rem, 8vw, 4rem);
+  font-weight: bold;
+  color: #ffffff;
+  text-shadow: 0 0 20px rgba(192, 96, 255, 0.7);
+  margin-bottom: 24px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ===== THÔNG TIN ===== */
+.info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.info span {
+  color: #5ad7ff;
+}
+
+/* ===== FOOTER ===== */
+.footer {
+  position: fixed;
+  bottom: 12px;
+  left: 0;
+  width: 100%;
+  text-align: center;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.3);
+  z-index: 2;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 480px) {
+  .container {
+    padding: 16px;
   }
+  h1 {
+    letter-spacing: 1px;
+  }
+}
 </style>
 </head>
 <body>
@@ -49,28 +117,28 @@
 <!-- Canvas nền con nhện -->
 <canvas id="bg-spider"></canvas>
 
-<nav class="nav">
-  <a class="nav-link" href="{{ url_for('index') }}">Hồ sơ</a>
-  <a class="nav-link" href="{{ url_for('spider') }}">Nhện chạy</a>
-</nav>
-
 <main class="container">
-  {% block content %}{% endblock %}
+  <h1>Doãn Trần Bảo Huy</h1>
+  <p class="subtitle">Hồ sơ cá nhân</p>
+  <div id="clock">--:--:--</div>
+  <div class="info">
+    <div>Trạng thái: <span>Hoạt động</span></div>
+    <div>Vai trò: <span>Lập trình viên</span></div>
+    <div>Ngày: <span id="date"></span></div>
+  </div>
 </main>
 
 <footer class="footer">
   <span>© 2026 Doãn Trần Bảo Huy</span>
 </footer>
 
-<!-- ======================================================================
-     ENGINE CON NHỆN INLINE
-     Chạy nền mọi trang, không phụ thuộc tệp JS ngoài
-     ====================================================================== -->
 <script>
 (function () {
   'use strict';
 
-  // Chờ DOM sẵn sàng
+  // ================================================================
+  // KHỞI TẠO SAU KHI DOM SẴN SÀNG
+  // ================================================================
   function ready(fn) {
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', fn);
@@ -82,7 +150,7 @@
   ready(function () {
 
     // ================================================================
-    // LẤY CANVAS
+    // LẤY CANVAS VÀ CONTEXT
     // ================================================================
     var canvas = document.getElementById('bg-spider');
     if (!canvas) {
@@ -103,7 +171,7 @@
     var mouseX = -1000, mouseY = -1000, mouseActive = false;
 
     // ================================================================
-    // DANH SÁCH NHÃN THEO STUDIO.PROMPT
+    // DANH SÁCH NHÃN NODE
     // ================================================================
     var LABELS = [
       'staff hired', 'source packet', 'clear object', 'drafts',
@@ -588,11 +656,31 @@
     resize();
     requestAnimationFrame(loop);
 
+    // ================================================================
+    // ĐỒNG HỒ
+    // ================================================================
+    var clockEl = document.getElementById('clock');
+    var dateEl = document.getElementById('date');
+
+    function updateClock() {
+      var now = new Date();
+      var h = String(now.getHours()).padStart(2, '0');
+      var m = String(now.getMinutes()).padStart(2, '0');
+      var s = String(now.getSeconds()).padStart(2, '0');
+      clockEl.textContent = h + ':' + m + ':' + s;
+
+      var d = String(now.getDate()).padStart(2, '0');
+      var mo = String(now.getMonth() + 1).padStart(2, '0');
+      var y = now.getFullYear();
+      dateEl.textContent = d + '/' + mo + '/' + y;
+    }
+
+    updateClock();
+    setInterval(updateClock, 1000);
+
     console.log('[Spider] Đã khởi động nền');
   });
 })();
 </script>
-
-{% block scripts %}{% endblock %}
 </body>
 </html>
