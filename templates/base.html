@@ -1,143 +1,294 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
-<meta name="description" content="Hồ sơ cá nhân của Doãn Trần Bảo Huy">
-<meta name="author" content="Doãn Trần Bảo Huy">
-<meta name="theme-color" content="#0a0a0a">
-<title>Hồ sơ mới</title>
-<style>
-/* ===== RESET CƠ BẢN ===== */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+{% extends "base.html" %}
 
-html, body {
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  background: #0a0a12;
-  color: #e0e0e0;
-  font-family: 'Courier New', monospace;
-}
+{% block title %}Doãn Trần Bảo Huy · Hồ sơ{% endblock %}
 
-/* ===== CANVAS NỀN ===== */
-#bg-spider {
-  position: fixed;
-  inset: 0;
-  width: 100vw;
-  height: 100vh;
-  z-index: 0;
-  pointer-events: none;
-  background: transparent;
-}
+{% block content %}
 
-/* ===== LỚP NỘI DUNG ===== */
-.container {
-  position: relative;
-  z-index: 2;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  padding: 24px;
-  text-align: center;
-}
+  <!-- ================================================================
+       KHỐI ĐỒNG HỒ GIỜ VIỆT NAM
+       ================================================================ -->
+  <section class="card clock-card">
+    <div class="clock-display">
+      <span class="clock-hm" id="time-hm">--:--</span>
+      <span class="clock-seconds" id="time-s">--</span>
+      <span class="clock-ampm" id="time-ampm">--</span>
+    </div>
+    <div class="clock-date" id="date-text">ĐANG TẢI...</div>
+    <div class="clock-zone">
+      <span class="zone-flag">🇻🇳</span>
+      <span id="clock-zone">Asia/Ho_Chi_Minh · UTC+07:00</span>
+    </div>
+    <div class="clock-progress">
+      <div class="clock-progress-bar" id="clock-progress"></div>
+    </div>
+  </section>
 
-h1 {
-  font-size: clamp(1.8rem, 5vw, 3rem);
-  letter-spacing: 2px;
-  color: #c060ff;
-  text-shadow: 0 0 12px rgba(192, 96, 255, 0.5);
-  margin-bottom: 8px;
-}
+  <!-- ================================================================
+       KHỐI GIỚI THIỆU
+       ================================================================ -->
+  <section class="card intro-card">
+    <div class="intro-grid"></div>
 
-.subtitle {
-  font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.6);
-  margin-bottom: 32px;
-  letter-spacing: 1px;
-}
+    <div class="intro-head">
+      <span class="prompt">&gt;_</span>
+      <div class="intro-name">
+        <div class="intro-name-line">DOÃN TRẦN BẢO HUY</div>
+        <div class="intro-name-role">SELLER &amp; WEBSITE, BOT DEVELOPER</div>
+      </div>
+    </div>
 
-/* ===== ĐỒNG HỒ ===== */
-#clock {
-  font-size: clamp(2rem, 8vw, 4rem);
-  font-weight: bold;
-  color: #ffffff;
-  text-shadow: 0 0 20px rgba(192, 96, 255, 0.7);
-  margin-bottom: 24px;
-  font-variant-numeric: tabular-nums;
-}
+    <div class="intro-folder">
+      <div class="folder-icon">
+        <svg viewBox="0 0 32 32" width="32" height="32" fill="none">
+          <path d="M3 8a3 3 0 0 1 3-3h6l3 3h11a3 3 0 0 1 3 3v13a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V8z"
+                fill="#4a6fa5" stroke="#6d8fc7" stroke-width="0.8"/>
+          <path d="M3 11h26" stroke="#6d8fc7" stroke-width="0.8" opacity="0.6"/>
+        </svg>
+      </div>
+      <div class="folder-label">projects</div>
+    </div>
 
-/* ===== THÔNG TIN ===== */
-.info {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  font-size: 0.95rem;
-  color: rgba(255, 255, 255, 0.75);
-}
+    <div class="intro-quote">
+      <span class="quote-bar"></span>
+      <span class="quote-text">"Keep going and never give up.<span class="quote-cursor">|</span>"</span>
+    </div>
 
-.info span {
-  color: #5ad7ff;
-}
+    <div class="intro-stats">
+      <div class="intro-stat">
+        <span class="stat-value" id="stat-projects">--</span>
+        <span class="stat-label">Dự án</span>
+      </div>
+      <div class="intro-stat">
+        <span class="stat-value" id="stat-uptime">--</span>
+        <span class="stat-label">Uptime</span>
+      </div>
+      <div class="intro-stat">
+        <span class="stat-value" id="stat-visits">--</span>
+        <span class="stat-label">Lượt xem</span>
+      </div>
+    </div>
+  </section>
 
-/* ===== FOOTER ===== */
-.footer {
-  position: fixed;
-  bottom: 12px;
-  left: 0;
-  width: 100%;
-  text-align: center;
-  font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.3);
-  z-index: 2;
-}
+  <!-- ================================================================
+       KHỐI KẾT NỐI
+       ================================================================ -->
+  <section class="card connect-card">
+    <div class="connect-header">
+      <span class="connect-line"></span>
+      <span class="connect-title">CONNECT</span>
+      <span class="connect-line"></span>
+    </div>
 
-/* ===== RESPONSIVE ===== */
-@media (max-width: 480px) {
-  .container {
-    padding: 16px;
-  }
-  h1 {
-    letter-spacing: 1px;
-  }
-}
-</style>
-</head>
-<body>
+    <div class="connect-list">
+      <a class="connect-link" href="https://t.me/baohuyno1" target="_blank" rel="noopener noreferrer">
+        <span class="connect-label">TELEGRAM</span>
+        <span class="connect-value">@baohuyno1</span>
+      </a>
 
-<!-- Canvas nền con nhện -->
-<canvas id="bg-spider"></canvas>
+      <a class="connect-link" href="https://zalo.me/0347635805" target="_blank" rel="noopener noreferrer">
+        <span class="connect-label">ZALO</span>
+        <span class="connect-value">0347635805</span>
+      </a>
 
-<main class="container">
-  <h1>Doãn Trần Bảo Huy</h1>
-  <p class="subtitle">Hồ sơ cá nhân</p>
-  <div id="clock">--:--:--</div>
-  <div class="info">
-    <div>Trạng thái: <span>Hoạt động</span></div>
-    <div>Vai trò: <span>Lập trình viên</span></div>
-    <div>Ngày: <span id="date"></span></div>
-  </div>
-</main>
+      <a class="connect-link" href="mailto:huydoan633@gmail.com">
+        <span class="connect-label">EMAIL</span>
+        <span class="connect-value">huydoan633@gmail.com</span>
+      </a>
 
-<footer class="footer">
-  <span>© 2026 Doãn Trần Bảo Huy</span>
-</footer>
+      <a class="connect-link" href="tel:0347635805">
+        <span class="connect-label">PHONE</span>
+        <span class="connect-value">0347635805</span>
+      </a>
+    </div>
+  </section>
 
+  <!-- ================================================================
+       KHỐI ĐĂNG NHẬP
+       ================================================================ -->
+  <section class="card login-card" id="loginCard">
+    <div class="login-header">
+      <span class="login-line"></span>
+      <span class="login-title">ĐĂNG NHẬP</span>
+      <span class="login-line"></span>
+    </div>
+
+    <div class="login-form" id="loginForm">
+      <div class="login-field">
+        <label class="login-label" for="login-user">TÀI KHOẢN</label>
+        <input class="login-input" type="text" id="login-user"
+               placeholder="Nhập tài khoản..." autocomplete="username">
+      </div>
+
+      <div class="login-field">
+        <label class="login-label" for="login-pass">MẬT KHẨU</label>
+        <input class="login-input" type="password" id="login-pass"
+               placeholder="Nhập mật khẩu..." autocomplete="current-password">
+      </div>
+
+      <div class="login-remember">
+        <input type="checkbox" id="login-remember" checked>
+        <label for="login-remember">Ghi nhớ đăng nhập</label>
+      </div>
+
+      <div class="login-actions">
+        <button class="login-btn primary" id="btn-login">ĐĂNG NHẬP</button>
+        <button class="login-btn ghost" id="btn-cancel">HỦY</button>
+      </div>
+
+      <div class="login-message" id="login-message"></div>
+    </div>
+
+    <div class="login-welcome" id="loginWelcome" style="display:none;">
+      <div class="login-avatar" id="login-avatar">U</div>
+      <div class="login-hello">Xin chào, <span id="login-username">--</span></div>
+      <div class="login-since">Đăng nhập lúc <span id="login-time">--</span></div>
+      <button class="login-btn ghost" id="btn-logout">ĐĂNG XUẤT</button>
+    </div>
+  </section>
+
+  <!-- ================================================================
+       KHỐI TRẠNG THÁI HỆ THỐNG
+       ================================================================ -->
+  <section class="card status-card">
+    <div class="status-header">
+      <span class="status-line"></span>
+      <span class="status-title">TRẠNG THÁI</span>
+      <span class="status-line"></span>
+    </div>
+
+    <div class="status-list">
+      <div class="status-item">
+        <span class="status-label">API</span>
+        <span class="status-value" id="status-api">Đang kiểm tra...</span>
+      </div>
+
+      <div class="status-item">
+        <span class="status-label">PHIÊN BẢN</span>
+        <span class="status-value" id="status-version">--</span>
+      </div>
+
+      <div class="status-item">
+        <span class="status-label">GIỜ MÁY CHỦ</span>
+        <span class="status-value" id="status-time">--</span>
+      </div>
+
+      <div class="status-item">
+        <span class="status-label">PING</span>
+        <span class="status-value" id="status-ping">--</span>
+      </div>
+
+      <div class="status-item">
+        <span class="status-label">LẦN CUỐI</span>
+        <span class="status-value" id="status-lastcheck">--</span>
+      </div>
+    </div>
+
+    <div class="status-actions">
+      <button class="status-btn" id="btn-refresh">LÀM MỚI</button>
+      <button class="status-btn" id="btn-health">KIỂM TRA API</button>
+    </div>
+
+    <div class="status-output" id="status-output">Sẵn sàng.</div>
+  </section>
+
+  <!-- ================================================================
+       KHỐI API NHANH
+       ================================================================ -->
+  <section class="card api-card">
+    <div class="api-header">
+      <span class="api-line"></span>
+      <span class="api-title">API NHANH</span>
+      <span class="api-line"></span>
+    </div>
+
+    <div class="api-buttons">
+      <button class="api-btn" data-api="/api/health">Health</button>
+      <button class="api-btn" data-api="/api/version">Version</button>
+      <button class="api-btn" data-api="/api/owner">Owner</button>
+      <button class="api-btn" data-api="/api/projects">Projects</button>
+      <button class="api-btn" data-api="/api/bfs/graph">BFS Graph</button>
+      <button class="api-btn" data-api="/api/spider/config">Spider Config</button>
+      <button class="api-btn" data-api="/api/spider/main">Spider Main</button>
+      <button class="api-btn" data-api="/api/spider/nodes">Spider Nodes</button>
+      <button class="api-btn" data-api="/api/profile/1">Profile #1</button>
+      <button class="api-btn" data-api="/status">Status</button>
+    </div>
+
+    <div class="api-output" id="api-output">Chọn một endpoint để xem kết quả...</div>
+  </section>
+
+  <!-- ================================================================
+       KHỐI DỰ ÁN TOÀN BỘ WEB
+       ================================================================ -->
+  <section class="card project-card">
+    <div class="project-header">
+      <span class="project-line"></span>
+      <span class="project-title">DỰ ÁN TOÀN BỘ WEB</span>
+      <span class="project-line"></span>
+    </div>
+
+    <div class="project-list" id="project-list">
+      <div class="project-item">
+        <span class="project-name">Đang tải...</span>
+      </div>
+    </div>
+
+    <div class="project-meta" id="project-meta"></div>
+  </section>
+
+  <!-- ================================================================
+       KHỐI LỊCH SỬ
+       ================================================================ -->
+  <section class="card history-card">
+    <div class="history-header">
+      <span class="history-line"></span>
+      <span class="history-title">LỊCH SỬ</span>
+      <span class="history-line"></span>
+    </div>
+
+    <div class="history-list" id="history-list">
+      <div class="history-empty">Chưa có hoạt động</div>
+    </div>
+
+    <div class="history-actions">
+      <button class="status-btn" id="btn-clear-history">XÓA LỊCH SỬ</button>
+    </div>
+  </section>
+
+  <!-- ================================================================
+       CHÂN TRANG
+       ================================================================ -->
+  <footer class="site-footer">
+    <span>© 2026 DOÃN TRẦN BẢO HUY</span>
+  </footer>
+
+{% endblock %}
+
+{% block scripts %}
 <script>
 (function () {
   'use strict';
 
   // ================================================================
-  // KHỞI TẠO SAU KHI DOM SẴN SÀNG
+  // CẤU HÌNH
+  // ================================================================
+  var VN_TIMEZONE = 'Asia/Ho_Chi_Minh';
+  var PING_INTERVAL = 30000;
+  var HISTORY_MAX = 20;
+
+  // ================================================================
+  // THÔNG TIN CHỦ SỞ HỮU
+  // ================================================================
+  window.OWNER = {
+    name: "Doãn Trần Bảo Huy",
+    telegram: "https://t.me/baohuyno1",
+    zalo: "https://zalo.me/0347635805",
+    email: "huydoan633@gmail.com",
+    phone: "0347635805"
+  };
+
+  // ================================================================
+  // HÀM TIỆN ÍCH
   // ================================================================
   function ready(fn) {
     if (document.readyState === 'loading') {
@@ -147,540 +298,1530 @@ h1 {
     }
   }
 
+  function escapeHtml(text) {
+    var div = document.createElement('div');
+    div.appendChild(document.createTextNode(String(text)));
+    return div.innerHTML;
+  }
+
+  function pad2(n) {
+    return String(n).padStart(2, '0');
+  }
+
+  // ================================================================
+  // KHỞI TẠO
+  // ================================================================
   ready(function () {
 
     // ================================================================
-    // LẤY CANVAS VÀ CONTEXT
+    // ĐỒNG HỒ GIỜ VIỆT NAM
     // ================================================================
-    var canvas = document.getElementById('bg-spider');
-    if (!canvas) {
-      console.warn('[Spider] Không tìm thấy canvas');
-      return;
-    }
-    var ctx = canvas.getContext('2d');
-
-    // ================================================================
-    // BIẾN KÍCH THƯỚC
-    // ================================================================
-    var W = 0, H = 0;
-    var DPR = window.devicePixelRatio || 1;
-
-    // ================================================================
-    // CHUỘT
-    // ================================================================
-    var mouseX = -1000, mouseY = -1000, mouseActive = false;
-
-    // ================================================================
-    // DANH SÁCH NHÃN NODE
-    // ================================================================
-    var LABELS = [
-      'staff hired', 'source packet', 'clear object', 'drafts',
-      'role', 'objective', 'ship', 'one', 'manual run', 'start',
-      'result', 'repeat', 'use only', 'actually', 'provided',
-      'brand', 'fact sheet', 'transcript', 'saved', 'feedback',
-      'next', 'approve', 'publishing', 'external', 'context',
-      'researcher', 'writer', 'producer', 'editor', 'publisher'
-    ];
-
-    var COLORS = [
-      '#ff5a8a', '#ff8a5a', '#ffd75a', '#a8ff5a', '#5affa8',
-      '#5ad7ff', '#5a8aff', '#a85aff', '#ff5ad7', '#ff5a5a'
-    ];
-
-    // ================================================================
-    // MẢNG NODE
-    // ================================================================
-    var nodes = [];
-
-    // ================================================================
-    // NHỆN CHÍNH
-    // ================================================================
-    var spider = {
-      index: 0,
-      x: 0, y: 0,
-      vx: 0, vy: 0,
-      angle: 0,
-      targetAngle: 0,
-      legPhase: 0,
-      wait: 0,
-      size: 2.0,
-      color: '#c060ff',
-      speed: 0.35,
-      maxSpeed: 8,
-      trail: []
-    };
-
-    // ================================================================
-    // NHỆN CON
-    // ================================================================
-    var babies = [];
-
-    // ================================================================
-    // HẠT
-    // ================================================================
-    var particles = [];
-
-    // ================================================================
-    // CẬP NHẬT KÍCH THƯỚC
-    // ================================================================
-    function resize() {
-      W = window.innerWidth;
-      H = window.innerHeight;
-      canvas.width = W * DPR;
-      canvas.height = H * DPR;
-      canvas.style.width = W + 'px';
-      canvas.style.height = H + 'px';
-      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-
-      buildNodes();
-      resetSpider();
-      buildBabies();
-    }
-
-    // ================================================================
-    // XÂY DỰNG NODE
-    // ================================================================
-    function buildNodes() {
-      nodes = [];
-      if (W <= 0 || H <= 0) return;
-
-      var paddingX = Math.max(90, W / 7);
-      var paddingY = Math.max(50, H / 9);
-      var cols = Math.max(2, Math.floor(W / paddingX));
-      var rows = Math.ceil(LABELS.length / cols);
-      var offsetX = (W - (cols - 1) * paddingX) / 2;
-      var offsetY = (H - (rows - 1) * paddingY) / 2;
-
-      for (var i = 0; i < LABELS.length; i++) {
-        var col = i % cols;
-        var row = Math.floor(i / cols);
-        nodes.push({
-          label: LABELS[i],
-          color: COLORS[i % COLORS.length],
-          radius: 24,
-          x: offsetX + col * paddingX,
-          y: offsetY + row * paddingY,
-          pulse: Math.random() * Math.PI * 2,
-          delay: 15 + Math.floor(Math.random() * 15)
-        });
-      }
-    }
-
-    // ================================================================
-    // ĐẶT LẠI NHỆN
-    // ================================================================
-    function resetSpider() {
-      if (nodes.length === 0) return;
-      spider.index = 0;
-      spider.x = nodes[0].x;
-      spider.y = nodes[0].y;
-      spider.vx = 0;
-      spider.vy = 0;
-      spider.trail = [];
-    }
-
-    // ================================================================
-    // TẠO NHỆN CON
-    // ================================================================
-    function buildBabies() {
-      babies = [];
-      for (var i = 0; i < 5; i++) {
-        babies.push({
-          x: Math.random() * W,
-          y: Math.random() * H,
-          vx: 0, vy: 0,
-          legPhase: Math.random() * Math.PI * 2,
-          size: 0.9 + Math.random() * 0.4,
-          color: COLORS[i % COLORS.length],
-          angle: 0,
-          wander: Math.random() * Math.PI * 2
-        });
-      }
-    }
-
-    // ================================================================
-    // SINH HẠT
-    // ================================================================
-    function spawnParticles(x, y, color) {
-      for (var i = 0; i < 10; i++) {
-        var a = Math.random() * Math.PI * 2;
-        var sp = 1 + Math.random() * 3;
-        particles.push({
-          x: x, y: y,
-          vx: Math.cos(a) * sp,
-          vy: Math.sin(a) * sp,
-          life: 1,
-          color: color,
-          size: 1 + Math.random() * 2
-        });
-      }
-    }
-
-    // ================================================================
-    // CẬP NHẬT HẠT
-    // ================================================================
-    function updateParticles() {
-      for (var i = particles.length - 1; i >= 0; i--) {
-        var p = particles[i];
-        p.x += p.vx;
-        p.y += p.vy;
-        p.vx *= 0.95;
-        p.vy *= 0.95;
-        p.life -= 0.02;
-        if (p.life <= 0) particles.splice(i, 1);
-      }
-    }
-
-    // ================================================================
-    // CẬP NHẬT NHỆN CHÍNH
-    // ================================================================
-    function updateSpider() {
-      if (nodes.length === 0) return;
-
-      // Trốn chuột
-      if (mouseActive) {
-        var mdx = spider.x - mouseX;
-        var mdy = spider.y - mouseY;
-        var md = Math.sqrt(mdx * mdx + mdy * mdy);
-        if (md < 140 && md > 0.1) {
-          spider.vx += (mdx / md) * 0.6;
-          spider.vy += (mdy / md) * 0.6;
-        }
-      }
-
-      if (spider.wait > 0) {
-        spider.wait--;
-        spider.legPhase += 0.2;
-        return;
-      }
-
-      var t = nodes[spider.index];
-      var dx = t.x - spider.x;
-      var dy = t.y - spider.y;
-      var dist = Math.sqrt(dx * dx + dy * dy);
-
-      if (dist < 6) {
-        spider.x = t.x;
-        spider.y = t.y;
-        spider.vx = 0;
-        spider.vy = 0;
-        spider.wait = t.delay;
-        spider.color = t.color;
-        spawnParticles(spider.x, spider.y, t.color);
-        spider.index = (spider.index + 1) % nodes.length;
-        return;
-      }
-
-      spider.vx += (dx / dist) * spider.speed;
-      spider.vy += (dy / dist) * spider.speed;
-
-      var sp = Math.sqrt(spider.vx * spider.vx + spider.vy * spider.vy);
-      if (sp > spider.maxSpeed) {
-        spider.vx = (spider.vx / sp) * spider.maxSpeed;
-        spider.vy = (spider.vy / sp) * spider.maxSpeed;
-      }
-
-      spider.vx *= 0.94;
-      spider.vy *= 0.94;
-      spider.x += spider.vx;
-      spider.y += spider.vy;
-
-      if (sp > 0.5) {
-        spider.targetAngle = Math.atan2(spider.vy, spider.vx);
-      }
-      var da = spider.targetAngle - spider.angle;
-      while (da > Math.PI) da -= Math.PI * 2;
-      while (da < -Math.PI) da += Math.PI * 2;
-      spider.angle += da * 0.2;
-
-      spider.legPhase += 0.4 + sp * 0.15;
-
-      spider.trail.push({ x: spider.x, y: spider.y, life: 1 });
-      if (spider.trail.length > 25) spider.trail.shift();
-      for (var i = 0; i < spider.trail.length; i++) {
-        spider.trail[i].life -= 0.05;
-      }
-    }
-
-    // ================================================================
-    // CẬP NHẬT NHỆN CON
-    // ================================================================
-    function updateBabies() {
-      for (var i = 0; i < babies.length; i++) {
-        var b = babies[i];
-        b.wander += (Math.random() - 0.5) * 0.3;
-        b.vx += Math.cos(b.wander) * 0.1;
-        b.vy += Math.sin(b.wander) * 0.1;
-
-        var dx = b.x - spider.x;
-        var dy = b.y - spider.y;
-        var d = Math.sqrt(dx * dx + dy * dy);
-        if (d < 90 && d > 0.1) {
-          b.vx += (dx / d) * 0.3;
-          b.vy += (dy / d) * 0.3;
-        }
-
-        b.vx *= 0.92;
-        b.vy *= 0.92;
-        b.x += b.vx;
-        b.y += b.vy;
-
-        if (b.x < 20) b.vx += 0.5;
-        if (b.x > W - 20) b.vx -= 0.5;
-        if (b.y < 20) b.vy += 0.5;
-        if (b.y > H - 20) b.vy -= 0.5;
-
-        if (Math.abs(b.vx) + Math.abs(b.vy) > 1) {
-          b.angle = Math.atan2(b.vy, b.vx);
-        }
-        b.legPhase += 0.5;
-      }
-    }
-
-    // ================================================================
-    // VẼ THÂN NHỆN
-    // ================================================================
-    function drawBody(c, s, color, angle, legPhase, glow) {
-      c.save();
-      c.rotate(angle + Math.PI / 2);
-
-      if (glow) {
-        c.shadowColor = color;
-        c.shadowBlur = 12 * s;
-      }
-
-      // 8 chân
-      c.strokeStyle = color;
-      c.lineWidth = 1.4 * s;
-      c.lineCap = 'round';
-      for (var i = 0; i < 8; i++) {
-        var side = i < 4 ? -1 : 1;
-        var idx = i % 4;
-        var baseAngle = -Math.PI / 2 + side * (0.5 + idx * 0.45);
-        var swing = Math.sin(legPhase + i) * 0.4;
-        var len1 = 7 * s;
-        var len2 = 9 * s;
-
-        var a1 = baseAngle + swing;
-        var x1 = Math.cos(a1) * len1;
-        var y1 = Math.sin(a1) * len1;
-
-        var a2 = a1 + side * 0.6;
-        var x2 = x1 + Math.cos(a2) * len2;
-        var y2 = y1 + Math.sin(a2) * len2;
-
-        c.beginPath();
-        c.moveTo(0, 0);
-        c.lineTo(x1, y1);
-        c.lineTo(x2, y2);
-        c.stroke();
-      }
-
-      // Bụng
-      c.fillStyle = color;
-      c.beginPath();
-      c.ellipse(0, 2 * s, 3.5 * s, 4.5 * s, 0, 0, Math.PI * 2);
-      c.fill();
-
-      // Đầu ngực
-      c.beginPath();
-      c.ellipse(0, -3.5 * s, 2.5 * s, 2.5 * s, 0, 0, Math.PI * 2);
-      c.fill();
-
-      // Mắt
-      c.shadowBlur = 0;
-      c.fillStyle = '#ffffff';
-      c.beginPath();
-      c.arc(-1 * s, -4 * s, 0.7 * s, 0, Math.PI * 2);
-      c.arc(1 * s, -4 * s, 0.7 * s, 0, Math.PI * 2);
-      c.fill();
-
-      c.fillStyle = color;
-      c.beginPath();
-      c.arc(-1 * s, -4 * s, 0.35 * s, 0, Math.PI * 2);
-      c.arc(1 * s, -4 * s, 0.35 * s, 0, Math.PI * 2);
-      c.fill();
-
-      c.restore();
-    }
-
-    // ================================================================
-    // VẼ NHỆN CHÍNH
-    // ================================================================
-    function drawSpider(c) {
-      c.save();
-      c.translate(spider.x, spider.y);
-      drawBody(c, spider.size, spider.color, spider.angle, spider.legPhase, true);
-      c.restore();
-    }
-
-    // ================================================================
-    // VẼ NHỆN CON
-    // ================================================================
-    function drawBabies(c) {
-      for (var i = 0; i < babies.length; i++) {
-        var b = babies[i];
-        c.save();
-        c.translate(b.x, b.y);
-        c.globalAlpha = 0.6;
-        drawBody(c, b.size, b.color, b.angle, b.legPhase, false);
-        c.restore();
-      }
-      c.globalAlpha = 1;
-    }
-
-    // ================================================================
-    // VẼ VỆT
-    // ================================================================
-    function drawTrail(c) {
-      for (var i = 0; i < spider.trail.length; i++) {
-        var t = spider.trail[i];
-        if (t.life <= 0) continue;
-        c.globalAlpha = t.life * 0.3;
-        c.fillStyle = spider.color;
-        c.beginPath();
-        c.arc(t.x, t.y, spider.size * t.life, 0, Math.PI * 2);
-        c.fill();
-      }
-      c.globalAlpha = 1;
-    }
-
-    // ================================================================
-    // VẼ HẠT
-    // ================================================================
-    function drawParticles(c) {
-      for (var i = 0; i < particles.length; i++) {
-        var p = particles[i];
-        c.globalAlpha = p.life;
-        c.fillStyle = p.color;
-        c.beginPath();
-        c.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        c.fill();
-      }
-      c.globalAlpha = 1;
-    }
-
-    // ================================================================
-    // VẼ NODE
-    // ================================================================
-    function drawNodes(c, time) {
-      for (var i = 0; i < nodes.length; i++) {
-        var n = nodes[i];
-        var isTarget = i === spider.index;
-        var pulse = 1 + Math.sin(time * 0.003 + n.pulse) * 0.1;
-
-        if (isTarget) {
-          c.beginPath();
-          c.arc(n.x, n.y, n.radius * pulse * 1.4, 0, Math.PI * 2);
-          c.strokeStyle = n.color;
-          c.globalAlpha = 0.25;
-          c.lineWidth = 1;
-          c.stroke();
-          c.globalAlpha = 1;
-        }
-
-        c.beginPath();
-        c.arc(n.x, n.y, n.radius * pulse, 0, Math.PI * 2);
-        c.fillStyle = isTarget
-          ? 'rgba(192, 96, 255, 0.12)'
-          : 'rgba(255, 255, 255, 0.02)';
-        c.fill();
-
-        c.strokeStyle = isTarget ? n.color : 'rgba(255, 255, 255, 0.12)';
-        c.lineWidth = isTarget ? 1.5 : 1;
-        c.stroke();
-
-        c.fillStyle = isTarget ? '#ffffff' : 'rgba(255, 255, 255, 0.45)';
-        c.font = '10px Courier New';
-        c.textAlign = 'center';
-        c.textBaseline = 'middle';
-        c.fillText(n.label, n.x, n.y);
-      }
-    }
-
-    // ================================================================
-    // VÒNG LẶP RENDER
-    // ================================================================
-    var startTime = performance.now();
-    function loop(now) {
-      var t = now - startTime;
-
-      // Vệt mờ
-      ctx.fillStyle = 'rgba(10, 10, 18, 0.15)';
-      ctx.fillRect(0, 0, W, H);
-
-      drawNodes(ctx, t);
-      drawTrail(ctx);
-      updateSpider();
-      drawSpider(ctx);
-
-      updateBabies();
-      drawBabies(ctx);
-
-      updateParticles();
-      drawParticles(ctx);
-
-      requestAnimationFrame(loop);
-    }
-
-    // ================================================================
-    // SỰ KIỆN
-    // ================================================================
-    window.addEventListener('resize', resize);
-
-    window.addEventListener('mousemove', function (e) {
-      mouseX = e.clientX;
-      mouseY = e.clientY;
-      mouseActive = true;
-    });
-
-    window.addEventListener('mouseleave', function () {
-      mouseActive = false;
-    });
-
-    window.addEventListener('touchmove', function (e) {
-      if (e.touches.length > 0) {
-        mouseX = e.touches[0].clientX;
-        mouseY = e.touches[0].clientY;
-        mouseActive = true;
-      }
-    }, { passive: true });
-
-    window.addEventListener('touchend', function () {
-      mouseActive = false;
-    });
-
-    // ================================================================
-    // KHỞI TẠO
-    // ================================================================
-    resize();
-    requestAnimationFrame(loop);
-
-    // ================================================================
-    // ĐỒNG HỒ
-    // ================================================================
-    var clockEl = document.getElementById('clock');
-    var dateEl = document.getElementById('date');
-
     function updateClock() {
       var now = new Date();
-      var h = String(now.getHours()).padStart(2, '0');
-      var m = String(now.getMinutes()).padStart(2, '0');
-      var s = String(now.getSeconds()).padStart(2, '0');
-      clockEl.textContent = h + ':' + m + ':' + s;
+      var parts;
+      try {
+        parts = new Intl.DateTimeFormat('en-US', {
+          timeZone: VN_TIMEZONE,
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: true,
+          weekday: 'long',
+          day: '2-digit',
+          month: 'long',
+          year: 'numeric'
+        }).formatToParts(now);
+      } catch (e) {
+        parts = null;
+      }
 
-      var d = String(now.getDate()).padStart(2, '0');
-      var mo = String(now.getMonth() + 1).padStart(2, '0');
-      var y = now.getFullYear();
-      dateEl.textContent = d + '/' + mo + '/' + y;
+      var hmEl = document.getElementById('time-hm');
+      var sEl = document.getElementById('time-s');
+      var ampmEl = document.getElementById('time-ampm');
+      var dateEl = document.getElementById('date-text');
+
+      if (parts) {
+        var map = {};
+        for (var i = 0; i < parts.length; i++) {
+          map[parts[i].type] = parts[i].value;
+        }
+        if (hmEl) hmEl.textContent = map.hour + ':' + map.minute;
+        if (sEl) sEl.textContent = map.second;
+        if (ampmEl) ampmEl.textContent = map.dayPeriod || '';
+        if (dateEl) {
+          dateEl.textContent =
+            (map.weekday || '').toUpperCase() + ' · ' +
+            (map.month || '').toUpperCase() + ' ' +
+            (map.day || '') + ', ' +
+            (map.year || '');
+        }
+      } else {
+        // Dự phòng
+        var vnOffset = 7 * 60;
+        var localOffset = now.getTimezoneOffset();
+        var vnTime = new Date(now.getTime() + (localOffset + vnOffset) * 60000);
+        var h24 = vnTime.getHours();
+        var ampm = h24 >= 12 ? 'PM' : 'AM';
+        var h12 = h24 % 12;
+        if (h12 === 0) h12 = 12;
+        if (hmEl) hmEl.textContent = pad2(h12) + ':' + pad2(vnTime.getMinutes());
+        if (sEl) sEl.textContent = pad2(vnTime.getSeconds());
+        if (ampmEl) ampmEl.textContent = ampm;
+        if (dateEl) dateEl.textContent = vnTime.toLocaleDateString('en-US');
+      }
+
+      // Thanh tiến trình trong ngày
+      var progressEl = document.getElementById('clock-progress');
+      if (progressEl) {
+        var nowVN = new Date(now.toLocaleString('en-US', { timeZone: VN_TIMEZONE }));
+        var h = nowVN.getHours();
+        var m = nowVN.getMinutes();
+        var s = nowVN.getSeconds();
+        var totalSec = h * 3600 + m * 60 + s;
+        var percent = (totalSec / 86400) * 100;
+        progressEl.style.width = percent.toFixed(2) + '%';
+      }
     }
 
     updateClock();
     setInterval(updateClock, 1000);
 
-    console.log('[Spider] Đã khởi động nền');
+    // ================================================================
+    // LỊCH SỬ HOẠT ĐỘNG
+    // ================================================================
+    var historyItems = [];
+
+    function loadHistory() {
+      try {
+        var raw = localStorage.getItem('app_history');
+        if (raw) historyItems = JSON.parse(raw);
+        if (!Array.isArray(historyItems)) historyItems = [];
+      } catch (e) {
+        historyItems = [];
+      }
+      renderHistory();
+    }
+
+    function saveHistory() {
+      try {
+        localStorage.setItem('app_history', JSON.stringify(historyItems));
+      } catch (e) {}
+    }
+
+    function addHistory(text) {
+      var now = new Date();
+      var vnTime = new Date(now.getTime() + (now.getTimezoneOffset() + 420) * 60000);
+      var time = pad2(vnTime.getHours()) + ':' + pad2(vnTime.getMinutes()) + ':' + pad2(vnTime.getSeconds());
+      historyItems.unshift({ time: time, text: text });
+      if (historyItems.length > HISTORY_MAX) {
+        historyItems = historyItems.slice(0, HISTORY_MAX);
+      }
+      saveHistory();
+      renderHistory();
+    }
+
+    function renderHistory() {
+      var list = document.getElementById('history-list');
+      if (!list) return;
+
+      if (historyItems.length === 0) {
+        list.innerHTML = '<div class="history-empty">Chưa có hoạt động</div>';
+        return;
+      }
+
+      var html = '';
+      for (var i = 0; i < historyItems.length; i++) {
+        var h = historyItems[i];
+        html += '<div class="history-item">' +
+                  '<span class="history-time">' + escapeHtml(h.time) + '</span>' +
+                  '<span class="history-text">' + escapeHtml(h.text) + '</span>' +
+                '</div>';
+      }
+      list.innerHTML = html;
+    }
+
+    var btnClearHistory = document.getElementById('btn-clear-history');
+    if (btnClearHistory) {
+      btnClearHistory.addEventListener('click', function () {
+        historyItems = [];
+        saveHistory();
+        renderHistory();
+      });
+    }
+
+    loadHistory();
+
+    // ================================================================
+    // ĐĂNG NHẬP
+    // ================================================================
+    var loginForm = document.getElementById('loginForm');
+    var loginWelcome = document.getElementById('loginWelcome');
+    var loginUser = document.getElementById('login-user');
+    var loginPass = document.getElementById('login-pass');
+    var loginMsg = document.getElementById('login-message');
+    var loginUsername = document.getElementById('login-username');
+    var loginAvatar = document.getElementById('login-avatar');
+    var loginTime = document.getElementById('login-time');
+    var loginRemember = document.getElementById('login-remember');
+    var btnLogin = document.getElementById('btn-login');
+    var btnCancel = document.getElementById('btn-cancel');
+    var btnLogout = document.getElementById('btn-logout');
+
+    function showLoginMessage(text, type) {
+      if (!loginMsg) return;
+      loginMsg.textContent = text;
+      loginMsg.className = 'login-message ' + (type || '');
+    }
+
+    function formatNow() {
+      var d = new Date();
+      var vn = new Date(d.getTime() + (d.getTimezoneOffset() + 420) * 60000);
+      return pad2(vn.getHours()) + ':' + pad2(vn.getMinutes()) + ':' + pad2(vn.getSeconds());
+    }
+
+    function doLogin() {
+      var u = (loginUser && loginUser.value || '').trim();
+      var p = (loginPass && loginPass.value || '').trim();
+
+      if (!u || !p) {
+        showLoginMessage('Vui lòng nhập tài khoản và mật khẩu.', 'error');
+        addHistory('Đăng nhập thất bại: thiếu thông tin');
+        return;
+      }
+
+      if (u.length < 3) {
+        showLoginMessage('Tài khoản phải có ít nhất 3 ký tự.', 'error');
+        addHistory('Đăng nhập thất bại: tài khoản ngắn');
+        return;
+      }
+
+      if (p.length < 3) {
+        showLoginMessage('Mật khẩu phải có ít nhất 3 ký tự.', 'error');
+        addHistory('Đăng nhập thất bại: mật khẩu ngắn');
+        return;
+      }
+
+      var remember = loginRemember && loginRemember.checked;
+      try {
+        if (remember) {
+          localStorage.setItem('logged_user', u);
+          localStorage.setItem('logged_time', formatNow());
+        } else {
+          sessionStorage.setItem('logged_user', u);
+          sessionStorage.setItem('logged_time', formatNow());
+        }
+      } catch (e) {}
+
+      showLoginMessage('Đăng nhập thành công.', 'ok');
+      addHistory('Đăng nhập: ' + u);
+
+      setTimeout(function () {
+        renderLoggedIn(u, formatNow());
+      }, 400);
+    }
+
+    function renderLoggedIn(username, time) {
+      if (loginForm) loginForm.style.display = 'none';
+      if (loginWelcome) loginWelcome.style.display = 'flex';
+      if (loginUsername) loginUsername.textContent = username;
+      if (loginAvatar) loginAvatar.textContent = username.charAt(0).toUpperCase();
+      if (loginTime) loginTime.textContent = time || '--';
+    }
+
+    function renderLoggedOut() {
+      if (loginForm) loginForm.style.display = 'block';
+      if (loginWelcome) loginWelcome.style.display = 'none';
+      if (loginUser) loginUser.value = '';
+      if (loginPass) loginPass.value = '';
+      showLoginMessage('', '');
+      try {
+        localStorage.removeItem('logged_user');
+        localStorage.removeItem('logged_time');
+        sessionStorage.removeItem('logged_user');
+        sessionStorage.removeItem('logged_time');
+      } catch (e) {}
+      addHistory('Đăng xuất');
+    }
+
+    if (btnLogin) btnLogin.addEventListener('click', doLogin);
+
+    if (loginPass) {
+      loginPass.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') doLogin();
+      });
+    }
+
+    if (loginUser) {
+      loginUser.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' && loginPass) loginPass.focus();
+      });
+    }
+
+    if (btnCancel) {
+      btnCancel.addEventListener('click', function () {
+        if (loginUser) loginUser.value = '';
+        if (loginPass) loginPass.value = '';
+        showLoginMessage('', '');
+      });
+    }
+
+    if (btnLogout) {
+      btnLogout.addEventListener('click', function () {
+        renderLoggedOut();
+      });
+    }
+
+    try {
+      var savedUser = localStorage.getItem('logged_user') || sessionStorage.getItem('logged_user');
+      var savedTime = localStorage.getItem('logged_time') || sessionStorage.getItem('logged_time');
+      if (savedUser) renderLoggedIn(savedUser, savedTime || '--');
+    } catch (e) {}
+
+    // ================================================================
+    // GỌI API
+    // ================================================================
+    function callApi(url, outputEl) {
+      if (!outputEl) return;
+
+      outputEl.textContent = 'Đang tải: ' + url + ' ...';
+      outputEl.classList.remove('error', 'ok');
+
+      var start = performance.now();
+
+      fetch(url, {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' },
+        cache: 'no-store'
+      })
+      .then(function (res) {
+        return res.json().then(function (data) {
+          return { ok: res.ok, status: res.status, data: data };
+        });
+      })
+      .then(function (result) {
+        var elapsed = Math.round(performance.now() - start);
+
+        if (result.ok) {
+          outputEl.classList.add('ok');
+        } else {
+          outputEl.classList.add('error');
+        }
+        outputEl.textContent =
+          'HTTP ' + result.status + ' · ' + elapsed + 'ms\n\n' +
+          JSON.stringify(result.data, null, 2);
+
+        addHistory('API: ' + url + ' (' + result.status + ')');
+      })
+      .catch(function (err) {
+        outputEl.classList.add('error');
+        outputEl.textContent = 'Lỗi kết nối: ' + err.message;
+        addHistory('Lỗi API: ' + url);
+      });
+    }
+
+    // ================================================================
+    // NÚT API
+    // ================================================================
+    var apiButtons = document.querySelectorAll('.api-btn');
+    var apiOutput = document.getElementById('api-output');
+
+    for (var i = 0; i < apiButtons.length; i++) {
+      (function (btn) {
+        btn.addEventListener('click', function () {
+          var url = btn.getAttribute('data-api');
+          if (!url) return;
+
+          for (var j = 0; j < apiButtons.length; j++) {
+            apiButtons[j].classList.remove('active');
+          }
+          btn.classList.add('active');
+
+          callApi(url, apiOutput);
+        });
+      })(apiButtons[i]);
+    }
+
+    // ================================================================
+    // KIỂM TRA API
+    // ================================================================
+    function checkHealth() {
+      var apiEl = document.getElementById('status-api');
+      var out = document.getElementById('status-output');
+      var pingEl = document.getElementById('status-ping');
+      var lastEl = document.getElementById('status-lastcheck');
+
+      if (out) out.textContent = 'Đang kiểm tra API...';
+
+      var start = performance.now();
+
+      fetch('/api/health', { cache: 'no-store' })
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        var elapsed = Math.round(performance.now() - start);
+        var ok = false;
+        var version = '';
+
+        if (data && data.ok && data.data) {
+          ok = data.data.status === 'ok';
+          version = data.data.version || '';
+        } else if (data && data.status === 'ok') {
+          ok = true;
+          version = data.version || '';
+        }
+
+        if (apiEl) {
+          apiEl.textContent = ok ? 'Online' : 'Offline';
+          apiEl.className = 'status-value ' + (ok ? 'online' : 'offline');
+        }
+
+        if (pingEl) {
+          pingEl.textContent = elapsed + ' ms';
+          pingEl.className = 'status-value ' + (elapsed < 500 ? 'online' : 'offline');
+        }
+
+        if (lastEl) {
+          lastEl.textContent = formatNow();
+        }
+
+        if (out) {
+          out.textContent = ok
+            ? 'API hoạt động bình thường' + (version ? ' (v' + version + ')' : '')
+            : 'API không phản hồi đúng';
+        }
+      })
+      .catch(function (err) {
+        if (apiEl) {
+          apiEl.textContent = 'Offline';
+          apiEl.className = 'status-value offline';
+        }
+        if (pingEl) {
+          pingEl.textContent = '--';
+          pingEl.className = 'status-value';
+        }
+        if (lastEl) lastEl.textContent = formatNow();
+        if (out) out.textContent = 'Lỗi kết nối: ' + err.message;
+      });
+    }
+
+    // ================================================================
+    // LẤY PHIÊN BẢN
+    // ================================================================
+    function loadVersion() {
+      var el = document.getElementById('status-version');
+      if (!el) return;
+
+      fetch('/api/version', { cache: 'no-store' })
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        var version = '--';
+        if (data && data.ok && data.data && data.data.version) {
+          version = data.data.version;
+        } else if (data && data.version) {
+          version = data.version;
+        }
+        el.textContent = version;
+      })
+      .catch(function () {
+        el.textContent = '--';
+      });
+    }
+
+    // ================================================================
+    // LẤY GIỜ MÁY CHỦ
+    // ================================================================
+    function loadServerTime() {
+      var timeEl = document.getElementById('status-time');
+      if (!timeEl) return;
+
+      fetch('/status', { cache: 'no-store' })
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        if (data && data.time) {
+          var d = new Date(data.time);
+          timeEl.textContent = d.toLocaleString('vi-VN', {
+            timeZone: VN_TIMEZONE,
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+          });
+        } else {
+          timeEl.textContent = '--';
+        }
+      })
+      .catch(function () {
+        timeEl.textContent = '--';
+      });
+    }
+
+    setInterval(loadServerTime, PING_INTERVAL);
+
+    // ================================================================
+    // TẢI DỰ ÁN
+    // ================================================================
+    function loadProjects() {
+      var list = document.getElementById('project-list');
+      var meta = document.getElementById('project-meta');
+      var statProjects = document.getElementById('stat-projects');
+      if (!list) return;
+
+      fetch('/api/projects', { cache: 'no-store' })
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        var items = [];
+        var count = 0;
+
+        if (data && data.ok && data.data && Array.isArray(data.data.items)) {
+          items = data.data.items;
+          count = data.data.count || items.length;
+        } else if (data && Array.isArray(data.items)) {
+          items = data.items;
+          count = data.count || items.length;
+        }
+
+        if (statProjects) statProjects.textContent = count;
+
+        if (items.length === 0) {
+          list.innerHTML = '<div class="project-item"><span class="project-name">Không có dự án</span></div>';
+          if (meta) meta.textContent = '';
+          return;
+        }
+
+        var html = '';
+        for (var i = 0; i < items.length; i++) {
+          var p = items[i];
+          var tagClass = (p.status === 'done') ? 'done' : 'wip';
+          var tagText = (p.status === 'done') ? 'Hoàn thành' : 'Đang làm';
+
+          html += '<div class="project-item">' +
+                    '<span class="project-name">' + escapeHtml(p.name || 'Không tên') + '</span>' +
+                    '<span class="project-tag ' + tagClass + '">' + tagText + '</span>' +
+                  '</div>';
+        }
+        list.innerHTML = html;
+
+        if (meta) {
+          meta.textContent = 'Tổng: ' + count + ' dự án · Nguồn: /api/projects';
+        }
+      })
+      .catch(function () {
+        list.innerHTML = '<div class="project-item"><span class="project-name">Lỗi tải dự án</span></div>';
+        if (meta) meta.textContent = '';
+      });
+    }
+
+    // ================================================================
+    // ĐẾM LƯỢT XEM
+    // ================================================================
+    function trackVisits() {
+      var el = document.getElementById('stat-visits');
+      if (!el) return;
+
+      var visits = 0;
+      try {
+        visits = parseInt(localStorage.getItem('visit_count') || '0', 10);
+        visits += 1;
+        localStorage.setItem('visit_count', String(visits));
+      } catch (e) {
+        visits = 1;
+      }
+      el.textContent = visits;
+    }
+
+    // ================================================================
+    // UPTIME
+    // ================================================================
+    var appStart = Date.now();
+    function updateUptime() {
+      var el = document.getElementById('stat-uptime');
+      if (!el) return;
+
+      var elapsed = Math.floor((Date.now() - appStart) / 1000);
+      var h = Math.floor(elapsed / 3600);
+      var m = Math.floor((elapsed % 3600) / 60);
+      var s = elapsed % 60;
+
+      if (h > 0) {
+        el.textContent = h + 'h ' + pad2(m) + 'm';
+      } else if (m > 0) {
+        el.textContent = m + 'm ' + pad2(s) + 's';
+      } else {
+        el.textContent = s + 's';
+      }
+    }
+
+    setInterval(updateUptime, 1000);
+    updateUptime();
+
+    // ================================================================
+    // NÚT TRẠNG THÁI
+    // ================================================================
+    var btnRefresh = document.getElementById('btn-refresh');
+    var btnHealth = document.getElementById('btn-health');
+
+    if (btnRefresh) {
+      btnRefresh.addEventListener('click', function () {
+        checkHealth();
+        loadVersion();
+        loadServerTime();
+        loadProjects();
+        addHistory('Làm mới toàn bộ');
+      });
+    }
+
+    if (btnHealth) {
+      btnHealth.addEventListener('click', function () {
+        checkHealth();
+        addHistory('Kiểm tra API thủ công');
+      });
+    }
+
+    // ================================================================
+    // PHÍM TẮT
+    // ================================================================
+    document.addEventListener('keydown', function (e) {
+      if (e.ctrlKey && e.key.toLowerCase() === 'r') {
+        e.preventDefault();
+        checkHealth();
+        loadVersion();
+        loadServerTime();
+        loadProjects();
+        addHistory('Phím tắt: Ctrl+R');
+      }
+
+      if (e.ctrlKey && e.key.toLowerCase() === 'l') {
+        e.preventDefault();
+        if (loginUser && loginForm && loginForm.style.display !== 'none') {
+          loginUser.focus();
+        }
+      }
+    });
+
+    // ================================================================
+    // KHỞI TẠO
+    // ================================================================
+    checkHealth();
+    loadVersion();
+    loadServerTime();
+    loadProjects();
+    trackVisits();
+
+    addHistory('Tải trang thành công');
+    console.log('[App] Đã khởi động · Giờ VN · Giao diện mới');
+
   });
 })();
 </script>
-</body>
-</html>
+
+<style>
+  /* ==================================================================
+     BIẾN CỤC BỘ
+     ================================================================== */
+  .card {
+    padding: 24px 20px;
+    border-radius: 16px;
+    margin-bottom: 16px;
+  }
+
+  /* ==================================================================
+     ĐỒNG HỒ
+     ================================================================== */
+  .clock-card {
+    position: relative;
+    text-align: center;
+    padding: 32px 20px 24px;
+  }
+
+  .clock-display {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 6px;
+    font-family: 'Georgia', 'Times New Roman', serif;
+    color: #ffffff;
+    margin-bottom: 12px;
+    line-height: 1;
+  }
+
+  .clock-hm {
+    font-size: clamp(3.2rem, 14vw, 5.5rem);
+    font-weight: 400;
+    letter-spacing: 0px;
+    text-shadow: 0 0 32px rgba(255, 255, 255, 0.15);
+  }
+
+  .clock-seconds {
+    font-size: clamp(0.9rem, 3vw, 1.4rem);
+    color: rgba(255, 255, 255, 0.55);
+    margin-top: 8px;
+    font-weight: 400;
+    letter-spacing: 0;
+  }
+
+  .clock-ampm {
+    font-size: clamp(0.8rem, 2.5vw, 1.1rem);
+    color: rgba(255, 255, 255, 0.45);
+    margin-top: 12px;
+    margin-left: 4px;
+    letter-spacing: 2px;
+    font-family: 'Georgia', serif;
+  }
+
+  .clock-date {
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    letter-spacing: 6px;
+    color: rgba(255, 255, 255, 0.45);
+    text-transform: uppercase;
+    margin-top: 8px;
+  }
+
+  .clock-zone {
+    margin-top: 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: rgba(255, 255, 255, 0.35);
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+  }
+
+  .zone-flag {
+    font-size: 12px;
+  }
+
+  .clock-progress {
+    margin-top: 20px;
+    height: 2px;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .clock-progress-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #6d8fc7, #8aa8d8);
+    border-radius: 2px;
+    transition: width 1s linear;
+  }
+
+  /* ==================================================================
+     GIỚI THIỆU
+     ================================================================== */
+  .intro-card {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .intro-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+      radial-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+    background-size: 14px 14px;
+    pointer-events: none;
+    opacity: 0.5;
+  }
+
+  .intro-head {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+
+  .intro-head .prompt {
+    font-family: 'Courier New', monospace;
+    font-size: 22px;
+    color: rgba(255, 255, 255, 0.6);
+    font-weight: 300;
+    line-height: 1.2;
+    letter-spacing: -2px;
+  }
+
+  .intro-name {
+    flex: 1;
+  }
+
+  .intro-name-line {
+    font-family: 'Georgia', 'Times New Roman', serif;
+    font-size: clamp(1.2rem, 4.5vw, 1.6rem);
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: #ffffff;
+    line-height: 1.3;
+    margin-bottom: 4px;
+  }
+
+  .intro-name-role {
+    font-family: 'Georgia', 'Times New Roman', serif;
+    font-size: clamp(0.85rem, 3vw, 1rem);
+    font-weight: 400;
+    letter-spacing: 3px;
+    color: rgba(255, 255, 255, 0.7);
+    line-height: 1.5;
+  }
+
+  .intro-folder {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    margin: 20px 0 28px;
+  }
+
+  .folder-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    filter: drop-shadow(0 4px 12px rgba(74, 111, 165, 0.4));
+  }
+
+  .folder-label {
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: rgba(255, 255, 255, 0.35);
+    text-transform: lowercase;
+  }
+
+  .intro-quote {
+    position: relative;
+    display: flex;
+    gap: 14px;
+    padding: 4px 0;
+  }
+
+  .quote-bar {
+    width: 2px;
+    background: rgba(255, 255, 255, 0.25);
+    border-radius: 1px;
+    flex-shrink: 0;
+  }
+
+  .quote-text {
+    font-family: 'Georgia', 'Times New Roman', serif;
+    font-style: italic;
+    font-size: clamp(0.9rem, 3.2vw, 1.05rem);
+    color: rgba(255, 255, 255, 0.75);
+    letter-spacing: 0.5px;
+    line-height: 1.5;
+  }
+
+  .quote-cursor {
+    display: inline-block;
+    animation: blink-cursor 1s step-end infinite;
+    color: rgba(255, 255, 255, 0.6);
+    margin-left: 2px;
+  }
+
+  @keyframes blink-cursor {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+  }
+
+  .intro-stats {
+    margin-top: 24px;
+    padding-top: 18px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+
+  .intro-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .intro-stat .stat-value {
+    font-family: 'Georgia', serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: #ffffff;
+  }
+
+  .intro-stat .stat-label {
+    font-family: 'Courier New', monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.35);
+  }
+
+  /* ==================================================================
+     KẾT NỐI
+     ================================================================== */
+  .connect-card {
+    padding: 24px 20px;
+  }
+
+  .connect-header,
+  .login-header,
+  .status-header,
+  .api-header,
+  .project-header,
+  .history-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+
+  .connect-line,
+  .login-line,
+  .status-line,
+  .api-line,
+  .project-line,
+  .history-line {
+    flex: 1;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .connect-title,
+  .login-title,
+  .status-title,
+  .api-title,
+  .project-title,
+  .history-title {
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .connect-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .connect-link {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 18px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    text-decoration: none;
+    transition: background 0.2s ease, border-color 0.2s ease, transform 0.1s ease;
+  }
+
+  .connect-link:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .connect-link:active {
+    transform: scale(0.99);
+  }
+
+  .connect-label {
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: rgba(255, 255, 255, 0.4);
+    text-transform: uppercase;
+  }
+
+  .connect-value {
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    letter-spacing: 1px;
+    color: rgba(255, 255, 255, 0.85);
+  }
+
+  /* ==================================================================
+     ĐĂNG NHẬP
+     ================================================================== */
+  .login-card {
+    padding: 24px 20px;
+  }
+
+  .login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .login-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .login-label {
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: rgba(255, 255, 255, 0.4);
+    text-transform: uppercase;
+  }
+
+  .login-input {
+    padding: 12px 16px;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    color: #ffffff;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    letter-spacing: 1px;
+    outline: none;
+    transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .login-input:focus {
+    border-color: rgba(255, 255, 255, 0.35);
+    background: rgba(255, 255, 255, 0.04);
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.05);
+  }
+
+  .login-input::placeholder {
+    color: rgba(255, 255, 255, 0.25);
+  }
+
+  .login-remember {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  .login-remember input[type="checkbox"] {
+    accent-color: #6d8fc7;
+    cursor: pointer;
+    width: 14px;
+    height: 14px;
+  }
+
+  .login-remember label {
+    cursor: pointer;
+  }
+
+  .login-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 6px;
+  }
+
+  .login-btn {
+    flex: 1;
+    padding: 12px 20px;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease,
+                color 0.2s ease, transform 0.1s ease;
+  }
+
+  .login-btn.primary {
+    background: rgba(109, 143, 199, 0.15);
+    border: 1px solid rgba(109, 143, 199, 0.6);
+    color: #ffffff;
+  }
+
+  .login-btn.primary:hover {
+    background: rgba(109, 143, 199, 0.3);
+    border-color: rgba(109, 143, 199, 0.9);
+  }
+
+  .login-btn.primary:active {
+    transform: scale(0.98);
+  }
+
+  .login-btn.ghost {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  .login-btn.ghost:hover {
+    border-color: rgba(255, 255, 255, 0.3);
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  .login-message {
+    min-height: 16px;
+    text-align: center;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    letter-spacing: 1px;
+  }
+
+  .login-message.error {
+    color: #ff7a9a;
+  }
+
+  .login-message.ok {
+    color: #7affb8;
+  }
+
+  .login-welcome {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+  }
+
+  .login-avatar {
+    width: 68px;
+    height: 68px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #4a6fa5, #6d8fc7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Georgia', serif;
+    font-size: 28px;
+    font-weight: 700;
+    color: #ffffff;
+    box-shadow: 0 0 28px rgba(109, 143, 199, 0.5);
+  }
+
+  .login-hello {
+    font-family: 'Georgia', serif;
+    font-size: 15px;
+    letter-spacing: 1px;
+    color: rgba(255, 255, 255, 0.85);
+  }
+
+  .login-hello span {
+    color: #8aa8d8;
+    font-weight: 700;
+  }
+
+  .login-since {
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: rgba(255, 255, 255, 0.35);
+    text-transform: uppercase;
+  }
+
+  .login-since span {
+    color: rgba(255, 255, 255, 0.7);
+  }
+
+  /* ==================================================================
+     TRẠNG THÁI
+     ================================================================== */
+  .status-card {
+    padding: 24px 20px;
+  }
+
+  .status-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .status-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px dashed rgba(255, 255, 255, 0.06);
+  }
+
+  .status-item:last-child {
+    border-bottom: none;
+  }
+
+  .status-label {
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: rgba(255, 255, 255, 0.4);
+    text-transform: uppercase;
+  }
+
+  .status-value {
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    letter-spacing: 1px;
+    color: rgba(255, 255, 255, 0.85);
+  }
+
+  .status-value.online {
+    color: #7affb8;
+  }
+
+  .status-value.offline {
+    color: #ff7a9a;
+  }
+
+  .status-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+  }
+
+  .status-btn {
+    flex: 1;
+    padding: 10px 14px;
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.65);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+  }
+
+  .status-btn:hover {
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.35);
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  .status-output {
+    margin-top: 14px;
+    padding: 12px 14px;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 8px;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: rgba(255, 255, 255, 0.55);
+    line-height: 1.5;
+  }
+
+  /* ==================================================================
+     API
+     ================================================================== */
+  .api-card {
+    padding: 24px 20px;
+  }
+
+  .api-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .api-btn {
+    padding: 8px 14px;
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.6);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+  }
+
+  .api-btn:hover {
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  .api-btn.active {
+    color: #8aa8d8;
+    border-color: rgba(109, 143, 199, 0.7);
+    background: rgba(109, 143, 199, 0.1);
+  }
+
+  .api-output {
+    margin-top: 14px;
+    padding: 14px 16px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 10px;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: rgba(255, 255, 255, 0.6);
+    max-height: 320px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    line-height: 1.6;
+  }
+
+  .api-output.ok {
+    border-color: rgba(122, 255, 184, 0.3);
+  }
+
+  .api-output.error {
+    border-color: rgba(255, 122, 154, 0.3);
+    color: #ff9eb5;
+  }
+
+  .api-output::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .api-output::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+  }
+
+  /* ==================================================================
+     DỰ ÁN
+     ================================================================== */
+  .project-card {
+    padding: 24px 20px;
+  }
+
+  .project-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .project-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 10px;
+  }
+
+  .project-name {
+    font-family: 'Georgia', serif;
+    font-size: 13px;
+    letter-spacing: 0.5px;
+    color: rgba(255, 255, 255, 0.85);
+  }
+
+  .project-tag {
+    font-family: 'Courier New', monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    border-radius: 20px;
+  }
+
+  .project-tag.done {
+    color: #7affb8;
+    border: 1px solid rgba(122, 255, 184, 0.3);
+    background: rgba(122, 255, 184, 0.05);
+  }
+
+  .project-tag.wip {
+    color: #ffd75a;
+    border: 1px solid rgba(255, 215, 90, 0.3);
+    background: rgba(255, 215, 90, 0.05);
+  }
+
+  .project-meta {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    font-family: 'Courier New', monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: rgba(255, 255, 255, 0.3);
+    text-transform: uppercase;
+  }
+
+  /* ==================================================================
+     LỊCH SỬ
+     ================================================================== */
+  .history-card {
+    padding: 24px 20px;
+  }
+
+  .history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 260px;
+    overflow-y: auto;
+  }
+
+  .history-item {
+    display: flex;
+    gap: 12px;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 8px;
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+    letter-spacing: 1px;
+  }
+
+  .history-time {
+    color: #8aa8d8;
+    flex-shrink: 0;
+  }
+
+  .history-text {
+    color: rgba(255, 255, 255, 0.6);
+    word-break: break-word;
+  }
+
+  .history-empty {
+    padding: 20px;
+    text-align: center;
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: rgba(255, 255, 255, 0.3);
+    text-transform: uppercase;
+  }
+
+  .history-actions {
+    margin-top: 14px;
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  /* ==================================================================
+     CHÂN TRANG
+     ================================================================== */
+  .site-footer {
+    margin-top: 24px;
+    padding: 20px 0;
+    text-align: center;
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+    letter-spacing: 4px;
+    color: rgba(255, 255, 255, 0.3);
+    text-transform: uppercase;
+  }
+
+  /* ==================================================================
+     RESPONSIVE
+     ================================================================== */
+  @media (max-width: 480px) {
+    .card {
+      padding: 20px 16px;
+      border-radius: 14px;
+    }
+
+    .clock-card {
+      padding: 26px 16px 20px;
+    }
+
+    .clock-date {
+      font-size: 9px;
+      letter-spacing: 3px;
+    }
+
+    .connect-title,
+    .login-title,
+    .status-title,
+    .api-title,
+    .project-title,
+    .history-title {
+      font-size: 10px;
+      letter-spacing: 3px;
+    }
+
+    .connect-value {
+      font-size: 11px;
+    }
+
+    .login-input {
+      padding: 10px 14px;
+      font-size: 12px;
+    }
+
+    .login-btn {
+      padding: 10px 14px;
+      font-size: 10px;
+      letter-spacing: 2px;
+    }
+
+    .api-btn {
+      padding: 7px 10px;
+      font-size: 9px;
+      letter-spacing: 1px;
+    }
+
+    .status-btn {
+      padding: 9px 10px;
+      font-size: 9px;
+      letter-spacing: 1px;
+    }
+
+    .intro-name-line {
+      letter-spacing: 1px;
+    }
+
+    .intro-name-role {
+      letter-spacing: 2px;
+    }
+
+    .intro-stat .stat-value {
+      font-size: 18px;
+    }
+  }
+
+  @media (max-width: 360px) {
+    .clock-date {
+      font-size: 8px;
+      letter-spacing: 2px;
+    }
+
+    .connect-value {
+      font-size: 10px;
+    }
+
+    .intro-name-line {
+      font-size: 1.05rem;
+    }
+
+    .intro-name-role {
+      font-size: 0.75rem;
+    }
+  }
+
+  /* ==================================================================
+     GIẢM CHUYỂN ĐỘNG
+     ================================================================== */
+  @media (prefers-reduced-motion: reduce) {
+    .quote-cursor {
+      animation: none;
+    }
+
+    .clock-progress-bar {
+      transition: none;
+    }
+
+    .connect-link,
+    .login-btn,
+    .api-btn,
+    .status-btn {
+      transition: none;
+    }
+  }
+</style>
+{% endblock %}
