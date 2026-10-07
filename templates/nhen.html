@@ -1,6 +1,76 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<meta name="description" content="Nhện AI chạy trên code">
+<meta name="author" content="Doãn Trần Bảo Huy">
+<meta name="theme-color" content="#0a0a0a">
+<title>Nhện AI</title>
+<style>
+/* ===== BIẾN TOÀN CỤC ===== */
+:root {
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-base: 16px;
+  --space-lg: 20px;
+  --space-xl: 24px;
+  --space-2xl: 32px;
+  --space-3xl: 48px;
+  --space-4xl: 64px;
+  --fs-xs: 10px;
+  --fs-sm: 12px;
+  --fs-base: 14px;
+  --fs-md: 16px;
+  --fw-normal: 400;
+  --font-main: 'Courier New', monospace;
+  --font-mono: 'Courier New', monospace;
+  --text-strong: #ffffff;
+  --text: #e0e0e0;
+  --text-muted: rgba(255, 255, 255, 0.6);
+  --text-dim: rgba(255, 255, 255, 0.3);
+  --border: rgba(255, 255, 255, 0.15);
+  --border-light: rgba(255, 255, 255, 0.3);
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
+  --radius-2xl: 18px;
+  --danger: #c94a4a;
+  --transition-base: 0.2s ease;
+  --transition-fast: 0.1s ease;
+}
+
+/* ===== RESET CƠ BẢN ===== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100%;
+  min-height: 100vh;
+  background: #0a0a12;
+  color: var(--text);
+  font-family: var(--font-main);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-lg);
+  overflow-x: hidden;
+}
+
+body > .container {
+  width: 100%;
+  max-width: 960px;
+}
+
 /* ==========================================================================
    KHỐI CON NHỆN CHẠY TRÊN CODE
-   Khung chứa canvas, tiêu đề, điều khiển và hiệu ứng
    ========================================================================== */
 
 /* --------------------------------------------------------------------------
@@ -29,7 +99,6 @@
   outline-offset: 2px;
 }
 
-/* Lớp phủ viền phát sáng */
 .spider-card::after {
   content: '';
   position: absolute;
@@ -132,6 +201,22 @@
   padding: var(--space-sm) var(--space-base);
   font-size: var(--fs-xs);
   letter-spacing: 2px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text);
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: color var(--transition-base),
+              border-color var(--transition-base),
+              background var(--transition-base);
+}
+
+.spider-controls .btn:hover {
+  color: var(--text-strong);
+  border-color: var(--text-strong);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .spider-controls .btn.active {
@@ -218,157 +303,71 @@
    ĐIỀU CHỈNH MÀN HÌNH LỚN
    -------------------------------------------------------------------------- */
 @media (min-width: 1024px) {
-  .spider-card {
-    min-height: 560px;
-  }
-
-  .spider-card canvas {
-    height: 560px;
-  }
+  .spider-card { min-height: 560px; }
+  .spider-card canvas { height: 560px; }
 }
 
 /* --------------------------------------------------------------------------
    ĐIỀU CHỈNH MÁY TÍNH BẢNG
    -------------------------------------------------------------------------- */
 @media (max-width: 768px) {
-  .spider-card {
-    min-height: 420px;
-    border-radius: var(--radius-xl);
-  }
-
-  .spider-card canvas {
-    height: 420px;
-  }
-
-  .spider-header {
-    top: 12px;
-    left: 14px;
-    font-size: var(--fs-xs);
-  }
-
-  .spider-status {
-    top: 12px;
-    right: 14px;
-    font-size: var(--fs-xs);
-  }
+  .spider-card { min-height: 420px; border-radius: var(--radius-xl); }
+  .spider-card canvas { height: 420px; }
+  .spider-header { top: 12px; left: 14px; font-size: var(--fs-xs); }
+  .spider-status { top: 12px; right: 14px; font-size: var(--fs-xs); }
 }
 
 /* --------------------------------------------------------------------------
    ĐIỀU CHỈNH ĐIỆN THOẠI
    -------------------------------------------------------------------------- */
 @media (max-width: 480px) {
-  .spider-card {
-    min-height: 360px;
-    border-radius: var(--radius-lg);
-  }
-
-  .spider-card canvas {
-    height: 360px;
-  }
-
-  .spider-header {
-    top: 10px;
-    left: 12px;
-    font-size: var(--fs-xs);
-    letter-spacing: 1px;
-  }
-
-  .spider-header::before {
-    width: 5px;
-    height: 5px;
-  }
-
-  .spider-status {
-    top: 10px;
-    right: 12px;
-    font-size: 10px;
-    letter-spacing: 1px;
-  }
-
-  .spider-controls {
-    gap: var(--space-sm);
-  }
-
-  .spider-controls .btn {
-    padding: var(--space-xs) var(--space-md);
-    font-size: 10px;
-  }
+  .spider-card { min-height: 360px; border-radius: var(--radius-lg); }
+  .spider-card canvas { height: 360px; }
+  .spider-header { top: 10px; left: 12px; font-size: var(--fs-xs); letter-spacing: 1px; }
+  .spider-header::before { width: 5px; height: 5px; }
+  .spider-status { top: 10px; right: 12px; font-size: 10px; letter-spacing: 1px; }
+  .spider-controls { gap: var(--space-sm); }
+  .spider-controls .btn { padding: var(--space-xs) var(--space-md); font-size: 10px; }
 }
 
 /* --------------------------------------------------------------------------
    ĐIỀU CHỈNH ĐIỆN THOẠI NHỎ
    -------------------------------------------------------------------------- */
 @media (max-width: 360px) {
-  .spider-card {
-    min-height: 300px;
-  }
-
-  .spider-card canvas {
-    height: 300px;
-  }
-
-  .spider-header {
-    top: 8px;
-    left: 10px;
-    font-size: 9px;
-  }
-
-  .spider-status {
-    top: 8px;
-    right: 10px;
-    font-size: 9px;
-  }
+  .spider-card { min-height: 300px; }
+  .spider-card canvas { height: 300px; }
+  .spider-header { top: 8px; left: 10px; font-size: 9px; }
+  .spider-status { top: 8px; right: 10px; font-size: 9px; }
 }
 
 /* --------------------------------------------------------------------------
    MÀN HÌNH NGANG ĐIỆN THOẠI
    -------------------------------------------------------------------------- */
 @media (max-height: 500px) and (orientation: landscape) {
-  .spider-card {
-    min-height: 260px;
-  }
-
-  .spider-card canvas {
-    height: 260px;
-  }
+  .spider-card { min-height: 260px; }
+  .spider-card canvas { height: 260px; }
 }
 
 /* --------------------------------------------------------------------------
    CHẾ ĐỘ TƯƠNG PHẢN CAO
    -------------------------------------------------------------------------- */
 @media (prefers-contrast: high) {
-  .spider-card {
-    border-width: 2px;
-  }
-
-  .spider-header,
-  .spider-status,
-  .spider-caption {
-    color: #ffffff;
-  }
+  .spider-card { border-width: 2px; }
+  .spider-header, .spider-status, .spider-caption { color: #ffffff; }
 }
 
 /* --------------------------------------------------------------------------
    CHẾ ĐỘ GIẢM CHUYỂN ĐỘNG
    -------------------------------------------------------------------------- */
 @media (prefers-reduced-motion: reduce) {
-  .spider-card,
-  .spider-header::before {
-    animation: none;
-  }
-
-  .spider-card canvas {
-    /* Canvas tự xử lý chuyển động bằng JS */
-  }
+  .spider-card, .spider-header::before { animation: none; }
 }
 
 /* --------------------------------------------------------------------------
    CHẾ ĐỘ IN ẤN
    -------------------------------------------------------------------------- */
 @media print {
-  .spider-card {
-    display: none;
-  }
+  .spider-card { display: none; }
 }
 
 /* --------------------------------------------------------------------------
@@ -379,9 +378,713 @@
     top: max(14px, env(safe-area-inset-top));
     left: max(18px, env(safe-area-inset-left));
   }
-
   .spider-status {
     top: max(14px, env(safe-area-inset-top));
     right: max(18px, env(safe-area-inset-right));
   }
 }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="spider-card" id="spiderCard">
+    <div class="spider-header">
+      <span class="accent">NHỆN AI</span> // TRẠNG THÁI
+    </div>
+    <div class="spider-status online" id="spiderStatus">ONLINE</div>
+    <canvas id="spiderCanvas"></canvas>
+    <div class="spider-overlay">
+      <div class="spider-overlay-text">ĐANG KHỞI TẠO...</div>
+    </div>
+  </div>
+
+  <div class="spider-controls">
+    <button class="btn active" data-mode="auto">TỰ ĐỘNG</button>
+    <button class="btn" data-mode="manual">THỦ CÔNG</button>
+    <button class="btn" data-mode="hunt">SĂN MỒI</button>
+  </div>
+
+  <div class="spider-caption">
+    <span class="accent">AI</span> // ĐIỀU KHIỂN BẰNG CHUỘT VÀ BÀN PHÍM
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ================================================================
+  // KHỞI TẠO SAU KHI DOM SẴN SÀNG
+  // ================================================================
+  function ready(fn) {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', fn);
+    } else {
+      fn();
+    }
+  }
+
+  ready(function () {
+
+    // ================================================================
+    // LẤY CÁC PHẦN TỬ DOM
+    // ================================================================
+    var canvas = document.getElementById('spiderCanvas');
+    var card = document.getElementById('spiderCard');
+    var statusEl = document.getElementById('spiderStatus');
+    var buttons = document.querySelectorAll('.spider-controls .btn');
+
+    if (!canvas) {
+      console.warn('[Spider AI] Không tìm thấy canvas');
+      return;
+    }
+
+    var ctx = canvas.getContext('2d');
+
+    // ================================================================
+    // BIẾN KÍCH THƯỚC
+    // ================================================================
+    var W = 0, H = 0;
+    var DPR = window.devicePixelRatio || 1;
+
+    // ================================================================
+    // CHUỘT VÀ BÀN PHÍM
+    // ================================================================
+    var mouseX = -1000, mouseY = -1000, mouseActive = false;
+    var keys = {};
+
+    // ================================================================
+    // CHẾ ĐỘ AI
+    // ================================================================
+    var mode = 'auto'; // auto | manual | hunt
+
+    // ================================================================
+    // DANH SÁCH NHÃN NODE
+    // ================================================================
+    var LABELS = [
+      'staff hired', 'source packet', 'clear object', 'drafts',
+      'role', 'objective', 'ship', 'one', 'manual run', 'start',
+      'result', 'repeat', 'use only', 'actually', 'provided',
+      'brand', 'fact sheet', 'transcript', 'saved', 'feedback',
+      'next', 'approve', 'publishing', 'external', 'context',
+      'researcher', 'writer', 'producer', 'editor', 'publisher'
+    ];
+
+    var COLORS = [
+      '#ff5a8a', '#ff8a5a', '#ffd75a', '#a8ff5a', '#5affa8',
+      '#5ad7ff', '#5a8aff', '#a85aff', '#ff5ad7', '#ff5a5a'
+    ];
+
+    // ================================================================
+    // MẢNG NODE
+    // ================================================================
+    var nodes = [];
+
+    // ================================================================
+    // NHỆN CHÍNH
+    // ================================================================
+    var spider = {
+      index: 0,
+      x: 0, y: 0,
+      vx: 0, vy: 0,
+      angle: 0,
+      targetAngle: 0,
+      legPhase: 0,
+      wait: 0,
+      size: 2.0,
+      color: '#c060ff',
+      speed: 0.35,
+      maxSpeed: 8,
+      trail: [],
+      manualTargetX: 0,
+      manualTargetY: 0
+    };
+
+    // ================================================================
+    // NHỆN CON
+    // ================================================================
+    var babies = [];
+
+    // ================================================================
+    // HẠT
+    // ================================================================
+    var particles = [];
+
+    // ================================================================
+    // CẬP NHẬT KÍCH THƯỚC
+    // ================================================================
+    function resize() {
+      var rect = canvas.getBoundingClientRect();
+      W = rect.width;
+      H = rect.height;
+      canvas.width = W * DPR;
+      canvas.height = H * DPR;
+      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+
+      buildNodes();
+      resetSpider();
+      buildBabies();
+    }
+
+    // ================================================================
+    // XÂY DỰNG NODE
+    // ================================================================
+    function buildNodes() {
+      nodes = [];
+      if (W <= 0 || H <= 0) return;
+
+      var paddingX = Math.max(90, W / 7);
+      var paddingY = Math.max(50, H / 9);
+      var cols = Math.max(2, Math.floor(W / paddingX));
+      var rows = Math.ceil(LABELS.length / cols);
+      var offsetX = (W - (cols - 1) * paddingX) / 2;
+      var offsetY = (H - (rows - 1) * paddingY) / 2;
+
+      for (var i = 0; i < LABELS.length; i++) {
+        var col = i % cols;
+        var row = Math.floor(i / cols);
+        nodes.push({
+          label: LABELS[i],
+          color: COLORS[i % COLORS.length],
+          radius: 24,
+          x: offsetX + col * paddingX,
+          y: offsetY + row * paddingY,
+          pulse: Math.random() * Math.PI * 2,
+          delay: 15 + Math.floor(Math.random() * 15)
+        });
+      }
+    }
+
+    // ================================================================
+    // ĐẶT LẠI NHỆN
+    // ================================================================
+    function resetSpider() {
+      if (nodes.length === 0) return;
+      spider.index = 0;
+      spider.x = nodes[0].x;
+      spider.y = nodes[0].y;
+      spider.vx = 0;
+      spider.vy = 0;
+      spider.trail = [];
+      spider.manualTargetX = spider.x;
+      spider.manualTargetY = spider.y;
+    }
+
+    // ================================================================
+    // TẠO NHỆN CON
+    // ================================================================
+    function buildBabies() {
+      babies = [];
+      for (var i = 0; i < 5; i++) {
+        babies.push({
+          x: Math.random() * W,
+          y: Math.random() * H,
+          vx: 0, vy: 0,
+          legPhase: Math.random() * Math.PI * 2,
+          size: 0.9 + Math.random() * 0.4,
+          color: COLORS[i % COLORS.length],
+          angle: 0,
+          wander: Math.random() * Math.PI * 2
+        });
+      }
+    }
+
+    // ================================================================
+    // SINH HẠT
+    // ================================================================
+    function spawnParticles(x, y, color) {
+      for (var i = 0; i < 10; i++) {
+        var a = Math.random() * Math.PI * 2;
+        var sp = 1 + Math.random() * 3;
+        particles.push({
+          x: x, y: y,
+          vx: Math.cos(a) * sp,
+          vy: Math.sin(a) * sp,
+          life: 1,
+          color: color,
+          size: 1 + Math.random() * 2
+        });
+      }
+    }
+
+    // ================================================================
+    // CẬP NHẬT HẠT
+    // ================================================================
+    function updateParticles() {
+      for (var i = particles.length - 1; i >= 0; i--) {
+        var p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vx *= 0.95;
+        p.vy *= 0.95;
+        p.life -= 0.02;
+        if (p.life <= 0) particles.splice(i, 1);
+      }
+    }
+
+    // ================================================================
+    // CẬP NHẬT NHỆN CHÍNH THEO CHẾ ĐỘ
+    // ================================================================
+    function updateSpider() {
+      if (nodes.length === 0) return;
+
+      // Trốn chuột nếu đang hoạt động
+      if (mouseActive) {
+        var mdx = spider.x - mouseX;
+        var mdy = spider.y - mouseY;
+        var md = Math.sqrt(mdx * mdx + mdy * mdy);
+        if (md < 140 && md > 0.1) {
+          spider.vx += (mdx / md) * 0.6;
+          spider.vy += (mdy / md) * 0.6;
+        }
+      }
+
+      // Xử lý chế độ
+      if (mode === 'auto') {
+        updateSpiderAuto();
+      } else if (mode === 'manual') {
+        updateSpiderManual();
+      } else if (mode === 'hunt') {
+        updateSpiderHunt();
+      }
+
+      // Giới hạn tốc độ
+      var sp = Math.sqrt(spider.vx * spider.vx + spider.vy * spider.vy);
+      if (sp > spider.maxSpeed) {
+        spider.vx = (spider.vx / sp) * spider.maxSpeed;
+        spider.vy = (spider.vy / sp) * spider.maxSpeed;
+      }
+
+      // Ma sát
+      spider.vx *= 0.94;
+      spider.vy *= 0.94;
+      spider.x += spider.vx;
+      spider.y += spider.vy;
+
+      // Góc quay
+      if (sp > 0.5) {
+        spider.targetAngle = Math.atan2(spider.vy, spider.vx);
+      }
+      var da = spider.targetAngle - spider.angle;
+      while (da > Math.PI) da -= Math.PI * 2;
+      while (da < -Math.PI) da += Math.PI * 2;
+      spider.angle += da * 0.2;
+
+      // Nhịp chân
+      spider.legPhase += 0.4 + sp * 0.15;
+
+      // Vệt
+      spider.trail.push({ x: spider.x, y: spider.y, life: 1 });
+      if (spider.trail.length > 25) spider.trail.shift();
+      for (var i = 0; i < spider.trail.length; i++) {
+        spider.trail[i].life -= 0.05;
+      }
+    }
+
+    // ================================================================
+    // CHẾ ĐỘ TỰ ĐỘNG: ĐI THEO NODE
+    // ================================================================
+    function updateSpiderAuto() {
+      if (spider.wait > 0) {
+        spider.wait--;
+        spider.legPhase += 0.2;
+        return;
+      }
+
+      var t = nodes[spider.index];
+      var dx = t.x - spider.x;
+      var dy = t.y - spider.y;
+      var dist = Math.sqrt(dx * dx + dy * dy);
+
+      if (dist < 6) {
+        spider.x = t.x;
+        spider.y = t.y;
+        spider.vx = 0;
+        spider.vy = 0;
+        spider.wait = t.delay;
+        spider.color = t.color;
+        spawnParticles(spider.x, spider.y, t.color);
+        spider.index = (spider.index + 1) % nodes.length;
+        return;
+      }
+
+      spider.vx += (dx / dist) * spider.speed;
+      spider.vy += (dy / dist) * spider.speed;
+    }
+
+    // ================================================================
+    // CHẾ ĐỘ THỦ CÔNG: ĐI THEO CHUỘT
+    // ================================================================
+    function updateSpiderManual() {
+      if (!mouseActive) return;
+
+      var dx = mouseX - spider.x;
+      var dy = mouseY - spider.y;
+      var dist = Math.sqrt(dx * dx + dy * dy);
+
+      if (dist < 6) {
+        spider.vx *= 0.8;
+        spider.vy *= 0.8;
+        return;
+      }
+
+      spider.vx += (dx / dist) * 0.5;
+      spider.vy += (dy / dist) * 0.5;
+    }
+
+    // ================================================================
+    // CHẾ ĐỘ SĂN MỒI: ĐUỔI THEO NHỆN CON GẦN NHẤT
+    // ================================================================
+    function updateSpiderHunt() {
+      if (babies.length === 0) return;
+
+      var nearest = null;
+      var minDist = Infinity;
+
+      for (var i = 0; i < babies.length; i++) {
+        var b = babies[i];
+        var dx = b.x - spider.x;
+        var dy = b.y - spider.y;
+        var d = Math.sqrt(dx * dx + dy * dy);
+        if (d < minDist) {
+          minDist = d;
+          nearest = b;
+        }
+      }
+
+      if (!nearest) return;
+
+      var dx2 = nearest.x - spider.x;
+      var dy2 = nearest.y - spider.y;
+      var dist2 = Math.sqrt(dx2 * dx2 + dy2 * dy2);
+
+      if (dist2 < 6) {
+        // Bắt được mồi
+        spawnParticles(nearest.x, nearest.y, nearest.color);
+        // Đặt lại mồi ở vị trí ngẫu nhiên
+        nearest.x = Math.random() * W;
+        nearest.y = Math.random() * H;
+        nearest.vx = 0;
+        nearest.vy = 0;
+        return;
+      }
+
+      spider.vx += (dx2 / dist2) * 0.6;
+      spider.vy += (dy2 / dist2) * 0.6;
+    }
+
+    // ================================================================
+    // CẬP NHẬT NHỆN CON
+    // ================================================================
+    function updateBabies() {
+      for (var i = 0; i < babies.length; i++) {
+        var b = babies[i];
+        b.wander += (Math.random() - 0.5) * 0.3;
+        b.vx += Math.cos(b.wander) * 0.1;
+        b.vy += Math.sin(b.wander) * 0.1;
+
+        // Trốn nhện chính nếu ở chế độ săn mồi
+        if (mode === 'hunt') {
+          var dx = b.x - spider.x;
+          var dy = b.y - spider.y;
+          var d = Math.sqrt(dx * dx + dy * dy);
+          if (d < 120 && d > 0.1) {
+            b.vx += (dx / d) * 0.5;
+            b.vy += (dy / d) * 0.5;
+          }
+        }
+
+        b.vx *= 0.92;
+        b.vy *= 0.92;
+        b.x += b.vx;
+        b.y += b.vy;
+
+        // Va chạm biên
+        if (b.x < 20) b.vx += 0.5;
+        if (b.x > W - 20) b.vx -= 0.5;
+        if (b.y < 20) b.vy += 0.5;
+        if (b.y > H - 20) b.vy -= 0.5;
+
+        if (Math.abs(b.vx) + Math.abs(b.vy) > 1) {
+          b.angle = Math.atan2(b.vy, b.vx);
+        }
+        b.legPhase += 0.5;
+      }
+    }
+
+    // ================================================================
+    // VẼ THÂN NHỆN
+    // ================================================================
+    function drawBody(c, s, color, angle, legPhase, glow) {
+      c.save();
+      c.rotate(angle + Math.PI / 2);
+
+      if (glow) {
+        c.shadowColor = color;
+        c.shadowBlur = 12 * s;
+      }
+
+      // 8 chân
+      c.strokeStyle = color;
+      c.lineWidth = 1.4 * s;
+      c.lineCap = 'round';
+      for (var i = 0; i < 8; i++) {
+        var side = i < 4 ? -1 : 1;
+        var idx = i % 4;
+        var baseAngle = -Math.PI / 2 + side * (0.5 + idx * 0.45);
+        var swing = Math.sin(legPhase + i) * 0.4;
+        var len1 = 7 * s;
+        var len2 = 9 * s;
+
+        var a1 = baseAngle + swing;
+        var x1 = Math.cos(a1) * len1;
+        var y1 = Math.sin(a1) * len1;
+
+        var a2 = a1 + side * 0.6;
+        var x2 = x1 + Math.cos(a2) * len2;
+        var y2 = y1 + Math.sin(a2) * len2;
+
+        c.beginPath();
+        c.moveTo(0, 0);
+        c.lineTo(x1, y1);
+        c.lineTo(x2, y2);
+        c.stroke();
+      }
+
+      // Bụng
+      c.fillStyle = color;
+      c.beginPath();
+      c.ellipse(0, 2 * s, 3.5 * s, 4.5 * s, 0, 0, Math.PI * 2);
+      c.fill();
+
+      // Đầu ngực
+      c.beginPath();
+      c.ellipse(0, -3.5 * s, 2.5 * s, 2.5 * s, 0, 0, Math.PI * 2);
+      c.fill();
+
+      // Mắt
+      c.shadowBlur = 0;
+      c.fillStyle = '#ffffff';
+      c.beginPath();
+      c.arc(-1 * s, -4 * s, 0.7 * s, 0, Math.PI * 2);
+      c.arc(1 * s, -4 * s, 0.7 * s, 0, Math.PI * 2);
+      c.fill();
+
+      c.fillStyle = color;
+      c.beginPath();
+      c.arc(-1 * s, -4 * s, 0.35 * s, 0, Math.PI * 2);
+      c.arc(1 * s, -4 * s, 0.35 * s, 0, Math.PI * 2);
+      c.fill();
+
+      c.restore();
+    }
+
+    // ================================================================
+    // VẼ NHỆN CHÍNH
+    // ================================================================
+    function drawSpider(c) {
+      c.save();
+      c.translate(spider.x, spider.y);
+      drawBody(c, spider.size, spider.color, spider.angle, spider.legPhase, true);
+      c.restore();
+    }
+
+    // ================================================================
+    // VẼ NHỆN CON
+    // ================================================================
+    function drawBabies(c) {
+      for (var i = 0; i < babies.length; i++) {
+        var b = babies[i];
+        c.save();
+        c.translate(b.x, b.y);
+        c.globalAlpha = 0.6;
+        drawBody(c, b.size, b.color, b.angle, b.legPhase, false);
+        c.restore();
+      }
+      c.globalAlpha = 1;
+    }
+
+    // ================================================================
+    // VẼ VỆT
+    // ================================================================
+    function drawTrail(c) {
+      for (var i = 0; i < spider.trail.length; i++) {
+        var t = spider.trail[i];
+        if (t.life <= 0) continue;
+        c.globalAlpha = t.life * 0.3;
+        c.fillStyle = spider.color;
+        c.beginPath();
+        c.arc(t.x, t.y, spider.size * t.life, 0, Math.PI * 2);
+        c.fill();
+      }
+      c.globalAlpha = 1;
+    }
+
+    // ================================================================
+    // VẼ HẠT
+    // ================================================================
+    function drawParticles(c) {
+      for (var i = 0; i < particles.length; i++) {
+        var p = particles[i];
+        c.globalAlpha = p.life;
+        c.fillStyle = p.color;
+        c.beginPath();
+        c.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        c.fill();
+      }
+      c.globalAlpha = 1;
+    }
+
+    // ================================================================
+    // VẼ NODE
+    // ================================================================
+    function drawNodes(c, time) {
+      for (var i = 0; i < nodes.length; i++) {
+        var n = nodes[i];
+        var isTarget = (mode === 'auto' && i === spider.index);
+        var pulse = 1 + Math.sin(time * 0.003 + n.pulse) * 0.1;
+
+        if (isTarget) {
+          c.beginPath();
+          c.arc(n.x, n.y, n.radius * pulse * 1.4, 0, Math.PI * 2);
+          c.strokeStyle = n.color;
+          c.globalAlpha = 0.25;
+          c.lineWidth = 1;
+          c.stroke();
+          c.globalAlpha = 1;
+        }
+
+        c.beginPath();
+        c.arc(n.x, n.y, n.radius * pulse, 0, Math.PI * 2);
+        c.fillStyle = isTarget
+          ? 'rgba(192, 96, 255, 0.12)'
+          : 'rgba(255, 255, 255, 0.02)';
+        c.fill();
+
+        c.strokeStyle = isTarget ? n.color : 'rgba(255, 255, 255, 0.12)';
+        c.lineWidth = isTarget ? 1.5 : 1;
+        c.stroke();
+
+        c.fillStyle = isTarget ? '#ffffff' : 'rgba(255, 255, 255, 0.45)';
+        c.font = '10px Courier New';
+        c.textAlign = 'center';
+        c.textBaseline = 'middle';
+        c.fillText(n.label, n.x, n.y);
+      }
+    }
+
+    // ================================================================
+    // VÒNG LẶP RENDER
+    // ================================================================
+    var startTime = performance.now();
+    function loop(now) {
+      var t = now - startTime;
+
+      // Xóa nền
+      ctx.fillStyle = 'rgba(5, 5, 8, 0.25)';
+      ctx.fillRect(0, 0, W, H);
+
+      drawNodes(ctx, t);
+      drawTrail(ctx);
+      updateSpider();
+      drawSpider(ctx);
+
+      updateBabies();
+      drawBabies(ctx);
+
+      updateParticles();
+      drawParticles(ctx);
+
+      requestAnimationFrame(loop);
+    }
+
+    // ================================================================
+    // SỰ KIỆN CHUỘT
+    // ================================================================
+    canvas.addEventListener('mousemove', function (e) {
+      var rect = canvas.getBoundingClientRect();
+      mouseX = e.clientX - rect.left;
+      mouseY = e.clientY - rect.top;
+      mouseActive = true;
+    });
+
+    canvas.addEventListener('mouseleave', function () {
+      mouseActive = false;
+    });
+
+    // ================================================================
+    // SỰ KIỆN CẢM ỨNG
+    // ================================================================
+    canvas.addEventListener('touchmove', function (e) {
+      if (e.touches.length > 0) {
+        var rect = canvas.getBoundingClientRect();
+        mouseX = e.touches[0].clientX - rect.left;
+        mouseY = e.touches[0].clientY - rect.top;
+        mouseActive = true;
+      }
+      e.preventDefault();
+    }, { passive: false });
+
+    canvas.addEventListener('touchend', function () {
+      mouseActive = false;
+    });
+
+    // ================================================================
+    // SỰ KIỆN BÀN PHÍM
+    // ================================================================
+    window.addEventListener('keydown', function (e) {
+      keys[e.key.toLowerCase()] = true;
+    });
+
+    window.addEventListener('keyup', function (e) {
+      keys[e.key.toLowerCase()] = false;
+    });
+
+    // ================================================================
+    // SỰ KIỆN NÚT ĐIỀU KHIỂN
+    // ================================================================
+    buttons.forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var newMode = btn.getAttribute('data-mode');
+        if (!newMode) return;
+
+        mode = newMode;
+
+        // Cập nhật trạng thái nút
+        buttons.forEach(function (b) {
+          b.classList.remove('active');
+        });
+        btn.classList.add('active');
+
+        // Cập nhật trạng thái nhện
+        if (mode === 'auto') {
+          statusEl.textContent = 'AUTO';
+          statusEl.className = 'spider-status online';
+        } else if (mode === 'manual') {
+          statusEl.textContent = 'MANUAL';
+          statusEl.className = 'spider-status online';
+        } else if (mode === 'hunt') {
+          statusEl.textContent = 'HUNT';
+          statusEl.className = 'spider-status online';
+        }
+      });
+    });
+
+    // ================================================================
+    // SỰ KIỆN THAY ĐỔI KÍCH THƯỚC
+    // ================================================================
+    window.addEventListener('resize', resize);
+
+    // ================================================================
+    // KHỞI TẠO
+    // ================================================================
+    resize();
+    requestAnimationFrame(loop);
+
+    console.log('[Spider AI] Đã khởi động');
+  });
+})();
+</script>
+</body>
+</html>
