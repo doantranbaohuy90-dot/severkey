@@ -5,10 +5,10 @@ from datetime import datetime
 from flask import Flask, render_template, jsonify, request
 from dotenv import load_dotenv
 
-# Nạp biến môi trường từ tệp .env
+# Nạp biến môi trường
 load_dotenv()
 
-# Khởi tạo logger
+# Cấu hình logger
 logging.basicConfig(
     level=os.environ.get("LOG_LEVEL", "INFO"),
     format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
@@ -16,62 +16,66 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+# ==========================================================================
+# ĐỒ THỊ MẪU CHO THUẬT TOÁN BFS
+# ==========================================================================
+BFS_GRAPH = {
+    "A": ["B", "C"],
+    "B": ["A", "D", "E"],
+    "C": ["A", "F"],
+    "D": ["B"],
+    "E": ["B", "F"],
+    "F": ["C", "E", "G"],
+    "G": ["F"],
+}
+
+
 def create_app() -> Flask:
-    # Khởi tạo ứng dụng Flask với thư mục tĩnh và mẫu
+    # Khởi tạo ứng dụng Flask
     app = Flask(
         __name__,
         static_folder="static",
         template_folder="templates",
     )
 
-    # Cấu hình khóa bí mật
+    # Cấu hình cơ bản
     app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-secret-key")
-
-    # Cấu hình chế độ debug
     app.config["DEBUG"] = os.environ.get("FLASK_DEBUG", "0") == "1"
-
-    # Cấu hình JSON trả về tiếng Việt
     app.config["JSON_AS_ASCII"] = False
     app.config["JSON_SORT_KEYS"] = False
-
-    # Cấu hình cache tệp tĩnh
-    app.config["SEND_FILE_MAX_AGE_DEFAULT"] = int(
-        os.environ.get("SEND_FILE_MAX_AGE_DEFAULT", "43200")
-    )
-
-    # Cấu hình giới hạn kích thước yêu cầu
-    app.config["MAX_CONTENT_LENGTH"] = int(
-        os.environ.get("MAX_CONTENT_LENGTH", str(16 * 1024 * 1024))
-    )
-
-    # Cấu hình ngôn ngữ mặc định
+    app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
+    app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024
     app.config["DEFAULT_LOCALE"] = os.environ.get("DEFAULT_LOCALE", "vi")
-
-    # Cấu hình múi giờ
     app.config["TIMEZONE"] = os.environ.get("TIMEZONE", "Asia/Ho_Chi_Minh")
+    app.config["MAX_PROFILE_FIELDS"] = int(os.environ.get("MAX_PROFILE_FIELDS", "20"))
 
-    # Đăng ký route giao diện
+    # Chặn cache HTML
+    @app.after_request
+    def no_cache(response):
+        if response.mimetype == "text/html":
+            response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+            response.headers["Pragma"] = "no-cache"
+            response.headers["Expires"] = "0"
+        return response
+
+    # Đăng ký route
     register_routes(app)
-
-    # Đăng ký route API
     register_api(app)
-
-    # Đăng ký xử lý lỗi
     register_errors(app)
 
-    # Ghi log khởi tạo
     logger.info("Ứng dụng đã khởi tạo")
     return app
 
 
+# ==========================================================================
+# ROUTE GIAO DIỆN
+# ==========================================================================
 def register_routes(app: Flask) -> None:
-    # Route trang chính
+
     @app.route("/")
     def index():
-        # Ghi log truy cập
-        logger.info("Truy cập trang chính từ %s", request.remote_addr)
-
-        # Trả về trang chính với thời gian hiện tại
+        # Trang chính
+        logger.info("Trang chính từ %s", request.remote_addr)
         return render_template(
             "index.html",
             now=datetime.utcnow(),
@@ -79,112 +83,110 @@ def register_routes(app: Flask) -> None:
             timezone=app.config["TIMEZONE"],
         )
 
-    # Route trang con nhện chạy trên code
     @app.route("/spider")
     def spider():
-        # Ghi log truy cập
-        logger.info("Truy cập trang con nhện từ %s", request.remote_addr)
+        # Trang con nhện
+        logger.info("Trang con nhện từ %s", request.remote_addr)
+        return render_template("spider.html", now=datetime.utcnow())
 
-        # Trả về trang con nhện
+    @app.route("/bfs")
+    def bfs():
+        # Trang mô phỏng thuật toán BFS
+        logger.info("Trang BFS từ %s", request.remote_addr)
         return render_template(
-            "spider.html",
+            "bfs.html",
+            graph=BFS_GRAPH,
             now=datetime.utcnow(),
         )
 
-    # Route favicon tránh lỗi 404
     @app.route("/favicon.ico")
     def favicon():
-        # Trả về 204 không nội dung
+        # Tránh lỗi 404 favicon
         return "", 204
 
-    # Route kiểm tra tình trạng
     @app.route("/status")
     def status():
-        # Trả về trạng thái hoạt động
+        # Trạng thái hoạt động
         return jsonify({
             "status": "running",
             "time": datetime.utcnow().isoformat(),
         })
 
 
+# ==========================================================================
+# ROUTE API
+# ==========================================================================
 def register_api(app: Flask) -> None:
-    # Endpoint kiểm tra tình trạng máy chủ
+
     @app.route("/api/health")
-    def health():
+    def api_health():
         return jsonify({
             "status": "ok",
             "time": datetime.utcnow().isoformat(),
+            "version": "1.0.0",
         })
 
-    # Endpoint trả về phiên bản ứng dụng
     @app.route("/api/version")
-    def version():
+    def api_version():
         return jsonify({
             "name": "ho-so-cua-toi",
             "version": "1.0.0",
-            "build": "2026.10.06",
+            "build": "2026.10.07",
         })
 
-    # Endpoint trả về thông tin chủ sở hữu
     @app.route("/api/owner")
-    def owner():
+    def api_owner():
         return jsonify({
             "name": "Doãn Trần Bảo Huy",
             "telegram": "https://t.me/baohuyno1",
             "zalo": "https://zalo.me/0347635805",
             "phone": "0347635805",
+            "email": "huydoan633@gmail.com",
             "role": "Seller & Website, Bot Developer",
         })
 
-    # Endpoint lấy danh sách dự án
     @app.route("/api/projects")
-    def projects():
-        # Danh sách dự án mẫu
+    def api_projects():
         items = [
             {"id": 1, "name": "Hồ sơ cá nhân", "status": "done"},
             {"id": 2, "name": "Bot Telegram", "status": "wip"},
             {"id": 3, "name": "Web API", "status": "done"},
             {"id": 4, "name": "Con nhện chạy", "status": "done"},
+            {"id": 5, "name": "Tìm đường BFS", "status": "done"},
         ]
+        return jsonify({"count": len(items), "items": items})
 
-        # Trả về danh sách dự án
+    @app.route("/api/bfs/graph")
+    def api_bfs_graph():
+        # Trả về đồ thị BFS
         return jsonify({
-            "count": len(items),
-            "items": items,
+            "graph": BFS_GRAPH,
+            "nodes": list(BFS_GRAPH.keys()),
         })
 
-    # Endpoint nhận dữ liệu hồ sơ
     @app.route("/api/profile", methods=["POST"])
-    def save_profile():
-        # Đọc dữ liệu JSON từ yêu cầu
+    def api_save_profile():
         payload = request.get_json(silent=True)
 
-        # Kiểm tra dữ liệu đầu vào
         if not isinstance(payload, dict):
             return jsonify({"error": "Dữ liệu không hợp lệ"}), 400
 
-        # Giới hạn số trường
-        if len(payload) > 20:
-            return jsonify({"error": "Vượt quá số trường cho phép"}), 400
+        max_fields = app.config["MAX_PROFILE_FIELDS"]
+        if len(payload) > max_fields:
+            return jsonify({"error": f"Vượt quá {max_fields} trường"}), 400
 
-        # Ghi log dữ liệu nhận được
-        logger.info("Nhận hồ sơ từ %s: %s", request.remote_addr, payload)
-
-        # Trả về kết quả
+        logger.info("Nhận hồ sơ từ %s", request.remote_addr)
         return jsonify({
             "status": "saved",
             "received": payload,
             "time": datetime.utcnow().isoformat(),
         })
 
-    # Endpoint lấy dữ liệu hồ sơ theo mã
     @app.route("/api/profile/<int:user_id>")
-    def get_profile(user_id: int):
-        # Kiểm tra mã người dùng hợp lệ
+    def api_get_profile(user_id: int):
         if user_id <= 0:
             return jsonify({"error": "Mã không hợp lệ"}), 400
 
-        # Trả về dữ liệu hồ sơ mẫu
         return jsonify({
             "user_id": user_id,
             "data": {
@@ -195,62 +197,43 @@ def register_api(app: Flask) -> None:
         })
 
 
+# ==========================================================================
+# XỬ LÝ LỖI
+# ==========================================================================
 def register_errors(app: Flask) -> None:
-    # Xử lý lỗi 404
+
     @app.errorhandler(404)
     def not_found(error):
-        # Kiểm tra yêu cầu thuộc API
         if request.path.startswith("/api/"):
             return jsonify({"error": "Không tìm thấy endpoint"}), 404
+        return render_template("error.html", code=404, message="Không tìm thấy trang"), 404
 
-        return render_template(
-            "error.html",
-            code=404,
-            message="Không tìm thấy trang",
-        ), 404
-
-    # Xử lý lỗi 500
-    @app.errorhandler(500)
-    def server_error(error):
-        # Ghi log lỗi
-        logger.exception("Lỗi máy chủ: %s", error)
-
-        # Kiểm tra yêu cầu thuộc API
-        if request.path.startswith("/api/"):
-            return jsonify({"error": "Lỗi máy chủ nội bộ"}), 500
-
-        return render_template(
-            "error.html",
-            code=500,
-            message="Lỗi máy chủ nội bộ",
-        ), 500
-
-    # Xử lý lỗi 405
     @app.errorhandler(405)
     def method_not_allowed(error):
-        return render_template(
-            "error.html",
-            code=405,
-            message="Phương thức không được phép",
-        ), 405
+        if request.path.startswith("/api/"):
+            return jsonify({"error": "Phương thức không được phép"}), 405
+        return render_template("error.html", code=405, message="Phương thức không được phép"), 405
 
-    # Xử lý lỗi 403
     @app.errorhandler(403)
     def forbidden(error):
-        return render_template(
-            "error.html",
-            code=403,
-            message="Không có quyền truy cập",
-        ), 403
+        if request.path.startswith("/api/"):
+            return jsonify({"error": "Không có quyền truy cập"}), 403
+        return render_template("error.html", code=403, message="Không có quyền truy cập"), 403
+
+    @app.errorhandler(500)
+    def server_error(error):
+        logger.exception("Lỗi máy chủ: %s", error)
+        if request.path.startswith("/api/"):
+            return jsonify({"error": "Lỗi máy chủ nội bộ"}), 500
+        return render_template("error.html", code=500, message="Lỗi máy chủ nội bộ"), 500
 
 
-# Khởi tạo ứng dụng toàn cục cho gunicorn
+# ==========================================================================
+# KHỞI TẠO ỨNG DỤNG
+# ==========================================================================
 app = create_app()
 
 
 if __name__ == "__main__":
-    # Cổng do Render cung cấp qua biến môi trường
     port = int(os.environ.get("PORT", 5000))
-
-    # Chạy máy chủ phát triển
-    app.run(host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0", port=port, debug=app.config["DEBUG"])
