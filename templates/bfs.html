@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Tìm đường BFS · Doãn Trần Bảo Huy{% endblock %}
+
+{% block content %}
+<section class="card bfs-card">
+  <div class="bfs-header">
+    BFS · <span class="accent" id="bfs-status">SẴN SÀNG</span>
+  </div>
+
+  <canvas id="bfs-canvas"></canvas>
+
+  <div class="bfs-controls">
+    <label class="bfs-field">
+      <span>Điểm đầu</span>
+      <select id="bfs-start"></select>
+    </label>
+
+    <label class="bfs-field">
+      <span>Điểm đích</span>
+      <select id="bfs-goal"></select>
+    </label>
+
+    <button class="btn" id="bfs-run">CHẠY</button>
+    <button class="btn" id="bfs-reset">XÓA</button>
+  </div>
+
+  <div class="bfs-result">
+    <div class="bfs-result-label">ĐƯỜNG ĐI</div>
+    <div class="bfs-result-path" id="bfs-path">—</div>
+  </div>
+</section>
+
+<script>
+  // Nhúng danh sách nút và đồ thị từ server
+  window.BFS_GRAPH = {{ graph | tojson }};
+</script>
+<script src="{{ url_for('static', filename='js/bfs.js') }}?v=20261007"></script>
+{% endblock %}
