@@ -2,275 +2,984 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<meta name="description" content="Con nhện chạy trên code">
+<meta name="author" content="Doãn Trần Bảo Huy">
+<meta name="theme-color" content="#0a0a0a">
 <title>Con nhện chạy trên code</title>
 <style>
-  /* Loại bỏ mặc định trình duyệt */
   * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
   }
 
-  /* Nền tối toàn màn hình */
   html, body {
     width: 100%;
     height: 100%;
     background: #0a0a12;
     overflow: hidden;
     font-family: 'Courier New', monospace;
+    color: #e0e0e0;
+    user-select: none;
   }
 
-  /* Canvas chiếm toàn bộ màn hình */
   #spider-canvas {
     display: block;
     width: 100vw;
     height: 100vh;
     cursor: crosshair;
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+  }
+
+  /* ===== HUD TRÊN CÙNG ===== */
+  .hud {
+    position: fixed;
+    z-index: 2;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.6);
+    pointer-events: none;
+    user-select: none;
+  }
+
+  .hud-top-left {
+    top: 16px;
+    left: 18px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .hud-top-left::before {
+    content: '';
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #c060ff;
+    box-shadow: 0 0 8px #c060ff;
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  .hud-top-left .accent {
+    color: #c060ff;
+    font-weight: 700;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .hud-top-right {
+    top: 16px;
+    right: 18px;
+    color: #5affa8;
+  }
+
+  .hud-bottom-left {
+    bottom: 16px;
+    left: 18px;
+    color: rgba(255, 255, 255, 0.4);
+  }
+
+  .hud-bottom-right {
+    bottom: 16px;
+    right: 18px;
+    color: rgba(255, 255, 255, 0.4);
+  }
+
+  .hud-bottom-right .val {
+    color: #5ad7ff;
+  }
+
+  /* ===== NÚT ĐIỀU KHIỂN ===== */
+  .controls {
+    position: fixed;
+    bottom: 48px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 3;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    pointer-events: auto;
+  }
+
+  .controls .btn {
+    padding: 8px 16px;
+    font-size: 10px;
+    letter-spacing: 2px;
+    font-family: 'Courier New', monospace;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.7);
+    background: rgba(10, 10, 18, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 6px;
+    cursor: pointer;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    transition: color 0.2s ease,
+                border-color 0.2s ease,
+                background 0.2s ease,
+                transform 0.1s ease;
+  }
+
+  .controls .btn:hover {
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.4);
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .controls .btn:active {
+    transform: scale(0.97);
+  }
+
+  .controls .btn.active {
+    color: #ffffff;
+    border-color: #c060ff;
+    background: rgba(192, 96, 255, 0.15);
+    box-shadow: 0 0 12px rgba(192, 96, 255, 0.4);
+  }
+
+  /* ===== ĐIỆN THOẠI ===== */
+  @media (max-width: 480px) {
+    .hud {
+      font-size: 9px;
+      letter-spacing: 1px;
+    }
+
+    .hud-top-left { top: 12px; left: 12px; }
+    .hud-top-right { top: 12px; right: 12px; }
+    .hud-bottom-left { bottom: 12px; left: 12px; }
+    .hud-bottom-right { bottom: 12px; right: 12px; }
+
+    .controls {
+      bottom: 40px;
+      gap: 6px;
+      padding: 0 8px;
+    }
+
+    .controls .btn {
+      padding: 6px 10px;
+      font-size: 9px;
+      letter-spacing: 1px;
+    }
+  }
+
+  @media (max-width: 360px) {
+    .hud { font-size: 8px; }
+    .controls .btn {
+      padding: 5px 8px;
+      font-size: 8px;
+    }
+  }
+
+  /* ===== GIẢM CHUYỂN ĐỘNG ===== */
+  @media (prefers-reduced-motion: reduce) {
+    .hud-top-left::before { animation: none; }
+    .controls .btn { transition: none; }
   }
 </style>
 </head>
 <body>
+
 <canvas id="spider-canvas"></canvas>
+
+<!-- HUD -->
+<div class="hud hud-top-left">
+  <span class="accent">NHỆN</span> // STUDIO.PROMPT
+</div>
+<div class="hud hud-top-right" id="hudStatus">● ONLINE</div>
+<div class="hud hud-bottom-left">
+  <span id="hudNode">NODE: 1/30</span>
+</div>
+<div class="hud hud-bottom-right">
+  CHẾ ĐỘ: <span class="val" id="hudMode">AUTO</span>
+</div>
+
+<!-- Điều khiển -->
+<div class="controls">
+  <button class="btn active" data-mode="auto">TỰ ĐỘNG</button>
+  <button class="btn" data-mode="manual">THỦ CÔNG</button>
+  <button class="btn" data-mode="hunt">SĂN MỒI</button>
+  <button class="btn" data-mode="chaos">HỖN LOẠN</button>
+</div>
+
 <script>
-// Lấy canvas và context
-const canvas = document.getElementById('spider-canvas');
-const ctx = canvas.getContext('2d');
+(function () {
+  'use strict';
 
-// Biến kích thước
-let W = 0;
-let H = 0;
-
-// Hàm cập nhật kích thước
-function resize() {
-  W = canvas.width = window.innerWidth;
-  H = canvas.height = window.innerHeight;
-  buildNodes();
-  spider.reset();
-}
-
-// Danh sách nút lệnh theo studio.prompt trong ảnh
-const NODE_DATA = [
-  { label: 'staff hired',   color: '#ff5a8a' },
-  { label: 'source packet', color: '#ff8a5a' },
-  { label: 'clear object',  color: '#ffd75a' },
-  { label: 'drafts',        color: '#a8ff5a' },
-  { label: 'role',          color: '#5affa8' },
-  { label: 'objective',     color: '#5ad7ff' },
-  { label: 'ship',          color: '#5a8aff' },
-  { label: 'one',           color: '#a85aff' },
-  { label: 'manual run',    color: '#ff5ad7' },
-  { label: 'start',         color: '#ff5a5a' },
-  { label: 'result',        color: '#ff9a5a' },
-  { label: 'repeat',        color: '#ffd75a' },
-  { label: 'use only',      color: '#a8ff5a' },
-  { label: 'actually',      color: '#5affa8' },
-  { label: 'provided',      color: '#5ad7ff' },
-  { label: 'brand',         color: '#5a8aff' },
-  { label: 'fact sheet',    color: '#a85aff' },
-  { label: 'transcript',    color: '#ff5ad7' },
-  { label: 'saved',         color: '#ff5a8a' },
-  { label: 'feedback',      color: '#ff8a5a' },
-  { label: 'next',          color: '#ffd75a' },
-  { label: 'approve',       color: '#a8ff5a' },
-  { label: 'publishing',    color: '#5affa8' },
-  { label: 'external',      color: '#5ad7ff' },
-  { label: 'context',       color: '#5a8aff' },
-  { label: 'researcher',    color: '#a85aff' },
-  { label: 'writer',        color: '#ff5ad7' },
-  { label: 'producer',      color: '#ff5a8a' },
-  { label: 'editor',        color: '#ff8a5a' },
-  { label: 'publisher',     color: '#ffd75a' }
-];
-
-let nodes = [];
-
-// Tính vị trí các node theo bố cục lưới
-function buildNodes() {
-  nodes = [];
-  if (W <= 0 || H <= 0) return;
-
-  const paddingX = 120;
-  const paddingY = 65;
-  const cols = Math.max(2, Math.floor(W / paddingX));
-  const rows = Math.ceil(NODE_DATA.length / cols);
-  const offsetX = (W - (cols - 1) * paddingX) / 2;
-  const offsetY = (H - (rows - 1) * paddingY) / 2;
-
-  NODE_DATA.forEach((item, i) => {
-    const col = i % cols;
-    const row = Math.floor(i / cols);
-    nodes.push({
-      ...item,
-      x: offsetX + col * paddingX,
-      y: offsetY + row * paddingY,
-      radius: 26,
-    });
-  });
-}
-
-// Lớp con nhện
-class Spider {
-  constructor() {
-    this.nodeIndex = 0;
-    this.x = 0;
-    this.y = 0;
-    this.vx = 0;
-    this.vy = 0;
-    this.legPhase = 0;
-    this.size = 2;
-    this.color = '#c060ff';
-    this.speed = 0.15;
-    this.maxSpeed = 6;
-    this.waitTimer = 0;
+  // ================================================================
+  // KHỞI TẠO KHI DOM SẴN SÀNG
+  // ================================================================
+  function ready(fn) {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', fn);
+    } else {
+      fn();
+    }
   }
 
-  reset() {
-    if (nodes.length === 0) return;
-    this.nodeIndex = 0;
-    this.x = nodes[0].x;
-    this.y = nodes[0].y;
-    this.vx = 0;
-    this.vy = 0;
-  }
+  ready(function () {
 
-  update() {
-    if (nodes.length === 0) return;
+    // ================================================================
+    // LẤY CANVAS VÀ CONTEXT
+    // ================================================================
+    var canvas = document.getElementById('spider-canvas');
+    if (!canvas) return;
+    var ctx = canvas.getContext('2d');
 
-    if (this.waitTimer > 0) {
-      this.waitTimer--;
-      this.legPhase += 0.15;
-      return;
+    // ================================================================
+    // BIẾN KÍCH THƯỚC
+    // ================================================================
+    var W = 0, H = 0;
+    var DPR = window.devicePixelRatio || 1;
+
+    // ================================================================
+    // CHUỘT VÀ BÀN PHÍM
+    // ================================================================
+    var mouseX = -1000, mouseY = -1000, mouseActive = false;
+
+    // ================================================================
+    // CHẾ ĐỘ
+    // ================================================================
+    var mode = 'auto';
+
+    // ================================================================
+    // THAM CHIẾU DOM
+    // ================================================================
+    var hudStatus = document.getElementById('hudStatus');
+    var hudNode = document.getElementById('hudNode');
+    var hudMode = document.getElementById('hudMode');
+    var buttons = document.querySelectorAll('.controls .btn');
+
+    // ================================================================
+    // DỮ LIỆU NODE
+    // ================================================================
+    var NODE_DATA = [
+      { label: 'staff hired',   color: '#ff5a8a' },
+      { label: 'source packet', color: '#ff8a5a' },
+      { label: 'clear object',  color: '#ffd75a' },
+      { label: 'drafts',        color: '#a8ff5a' },
+      { label: 'role',          color: '#5affa8' },
+      { label: 'objective',     color: '#5ad7ff' },
+      { label: 'ship',          color: '#5a8aff' },
+      { label: 'one',           color: '#a85aff' },
+      { label: 'manual run',    color: '#ff5ad7' },
+      { label: 'start',         color: '#ff5a5a' },
+      { label: 'result',        color: '#ff9a5a' },
+      { label: 'repeat',        color: '#ffd75a' },
+      { label: 'use only',      color: '#a8ff5a' },
+      { label: 'actually',      color: '#5affa8' },
+      { label: 'provided',      color: '#5ad7ff' },
+      { label: 'brand',         color: '#5a8aff' },
+      { label: 'fact sheet',    color: '#a85aff' },
+      { label: 'transcript',    color: '#ff5ad7' },
+      { label: 'saved',         color: '#ff5a8a' },
+      { label: 'feedback',      color: '#ff8a5a' },
+      { label: 'next',          color: '#ffd75a' },
+      { label: 'approve',       color: '#a8ff5a' },
+      { label: 'publishing',    color: '#5affa8' },
+      { label: 'external',      color: '#5ad7ff' },
+      { label: 'context',       color: '#5a8aff' },
+      { label: 'researcher',    color: '#a85aff' },
+      { label: 'writer',        color: '#ff5ad7' },
+      { label: 'producer',      color: '#ff5a8a' },
+      { label: 'editor',        color: '#ff8a5a' },
+      { label: 'publisher',     color: '#ffd75a' }
+    ];
+
+    // ================================================================
+    // MẢNG NODE
+    // ================================================================
+    var nodes = [];
+
+    // ================================================================
+    // NHỆN CHÍNH
+    // ================================================================
+    var spider = {
+      nodeIndex: 0,
+      x: 0, y: 0,
+      vx: 0, vy: 0,
+      angle: 0,
+      targetAngle: 0,
+      legPhase: 0,
+      size: 2.0,
+      color: '#c060ff',
+      speed: 0.15,
+      maxSpeed: 6,
+      waitTimer: 0,
+      trail: []
+    };
+
+    // ================================================================
+    // NHỆN CON
+    // ================================================================
+    var babies = [];
+
+    // ================================================================
+    // HẠT
+    // ================================================================
+    var particles = [];
+
+    // ================================================================
+    // ĐỐM SAO NỀN
+    // ================================================================
+    var stars = [];
+
+    // ================================================================
+    // CẬP NHẬT KÍCH THƯỚC
+    // ================================================================
+    function resize() {
+      W = window.innerWidth;
+      H = window.innerHeight;
+      canvas.width = W * DPR;
+      canvas.height = H * DPR;
+      canvas.style.width = W + 'px';
+      canvas.style.height = H + 'px';
+      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+
+      buildNodes();
+      resetSpider();
+      buildBabies();
+      buildStars();
     }
 
-    const target = nodes[this.nodeIndex];
-    const dx = target.x - this.x;
-    const dy = target.y - this.y;
-    const dist = Math.hypot(dx, dy);
+    // ================================================================
+    // XÂY DỰNG NODE
+    // ================================================================
+    function buildNodes() {
+      nodes = [];
+      if (W <= 0 || H <= 0) return;
 
-    if (dist < 5) {
-      this.x = target.x;
-      this.y = target.y;
-      this.vx = 0;
-      this.vy = 0;
-      this.waitTimer = 25;
-      this.nodeIndex = (this.nodeIndex + 1) % nodes.length;
-      return;
+      var paddingX = Math.max(90, W / 7);
+      var paddingY = Math.max(55, H / 9);
+      var cols = Math.max(2, Math.floor(W / paddingX));
+      var rows = Math.ceil(NODE_DATA.length / cols);
+      var offsetX = (W - (cols - 1) * paddingX) / 2;
+      var offsetY = (H - (rows - 1) * paddingY) / 2;
+
+      for (var i = 0; i < NODE_DATA.length; i++) {
+        var col = i % cols;
+        var row = Math.floor(i / cols);
+        nodes.push({
+          label: NODE_DATA[i].label,
+          color: NODE_DATA[i].color,
+          radius: 26,
+          x: offsetX + col * paddingX,
+          y: offsetY + row * paddingY,
+          pulse: Math.random() * Math.PI * 2,
+          delay: 15 + Math.floor(Math.random() * 15)
+        });
+      }
     }
 
-    this.vx += (dx / dist) * this.speed;
-    this.vy += (dy / dist) * this.speed;
-
-    const sp = Math.hypot(this.vx, this.vy);
-    if (sp > this.maxSpeed) {
-      this.vx = (this.vx / sp) * this.maxSpeed;
-      this.vy = (this.vy / sp) * this.maxSpeed;
+    // ================================================================
+    // ĐẶT LẠI NHỆN
+    // ================================================================
+    function resetSpider() {
+      if (nodes.length === 0) return;
+      spider.nodeIndex = 0;
+      spider.x = nodes[0].x;
+      spider.y = nodes[0].y;
+      spider.vx = 0;
+      spider.vy = 0;
+      spider.trail = [];
+      spider.waitTimer = 0;
     }
 
-    this.vx *= 0.96;
-    this.vy *= 0.96;
-    this.x += this.vx;
-    this.y += this.vy;
-    this.legPhase += 0.4 + sp * 0.1;
-  }
+    // ================================================================
+    // TẠO NHỆN CON
+    // ================================================================
+    function buildBabies() {
+      babies = [];
+      for (var i = 0; i < 6; i++) {
+        babies.push({
+          x: Math.random() * W,
+          y: Math.random() * H,
+          vx: 0, vy: 0,
+          legPhase: Math.random() * Math.PI * 2,
+          size: 0.7 + Math.random() * 0.4,
+          color: NODE_DATA[i % NODE_DATA.length].color,
+          angle: 0,
+          wander: Math.random() * Math.PI * 2
+        });
+      }
+    }
 
-  draw(c) {
-    const s = this.size;
-    c.save();
-    c.translate(this.x, this.y);
+    // ================================================================
+    // TẠO ĐỐM SAO NỀN
+    // ================================================================
+    function buildStars() {
+      stars = [];
+      var count = Math.floor((W * H) / 12000);
+      for (var i = 0; i < count; i++) {
+        stars.push({
+          x: Math.random() * W,
+          y: Math.random() * H,
+          r: Math.random() * 1.2 + 0.3,
+          a: Math.random() * 0.4 + 0.1,
+          phase: Math.random() * Math.PI * 2
+        });
+      }
+    }
 
-    const angle = Math.atan2(this.vy, this.vx);
-    c.rotate(angle + Math.PI / 2);
+    // ================================================================
+    // SINH HẠT
+    // ================================================================
+    function spawnParticles(x, y, color, count) {
+      count = count || 12;
+      for (var i = 0; i < count; i++) {
+        var a = Math.random() * Math.PI * 2;
+        var sp = 1 + Math.random() * 3.5;
+        particles.push({
+          x: x, y: y,
+          vx: Math.cos(a) * sp,
+          vy: Math.sin(a) * sp,
+          life: 1,
+          color: color,
+          size: 1 + Math.random() * 2
+        });
+      }
+    }
 
-    c.strokeStyle = this.color;
-    c.lineWidth = 1.5;
-    c.lineCap = 'round';
-    for (let i = 0; i < 8; i++) {
-      const side = i < 4 ? -1 : 1;
-      const idx = i % 4;
-      const baseAngle = -Math.PI / 2 + side * (0.5 + idx * 0.45);
-      const swing = Math.sin(this.legPhase + i) * 0.35;
-      const len1 = 7 * s;
-      const len2 = 9 * s;
+    // ================================================================
+    // CẬP NHẬT HẠT
+    // ================================================================
+    function updateParticles() {
+      for (var i = particles.length - 1; i >= 0; i--) {
+        var p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vx *= 0.94;
+        p.vy *= 0.94;
+        p.life -= 0.022;
+        if (p.life <= 0) particles.splice(i, 1);
+      }
+    }
 
-      const a1 = baseAngle + swing;
-      const x1 = Math.cos(a1) * len1;
-      const y1 = Math.sin(a1) * len1;
+    // ================================================================
+    // CẬP NHẬT NHỆN CHÍNH
+    // ================================================================
+    function updateSpider() {
+      if (nodes.length === 0) return;
 
-      const a2 = a1 + side * 0.6;
-      const x2 = x1 + Math.cos(a2) * len2;
-      const y2 = y1 + Math.sin(a2) * len2;
+      // Trốn chuột
+      if (mouseActive) {
+        var mdx = spider.x - mouseX;
+        var mdy = spider.y - mouseY;
+        var md = Math.sqrt(mdx * mdx + mdy * mdy);
+        if (md < 140 && md > 0.1) {
+          spider.vx += (mdx / md) * 0.7;
+          spider.vy += (mdy / md) * 0.7;
+        }
+      }
 
+      if (mode === 'auto') updateAuto();
+      else if (mode === 'manual') updateManual();
+      else if (mode === 'hunt') updateHunt();
+      else if (mode === 'chaos') updateChaos();
+
+      // Giới hạn tốc độ
+      var sp = Math.sqrt(spider.vx * spider.vx + spider.vy * spider.vy);
+      var currentMax = (mode === 'chaos') ? 12 : spider.maxSpeed;
+      if (sp > currentMax) {
+        spider.vx = (spider.vx / sp) * currentMax;
+        spider.vy = (spider.vy / sp) * currentMax;
+      }
+
+      // Ma sát
+      spider.vx *= 0.95;
+      spider.vy *= 0.95;
+      spider.x += spider.vx;
+      spider.y += spider.vy;
+
+      // Giữ trong biên
+      var margin = 30;
+      if (spider.x < margin) { spider.x = margin; spider.vx = Math.abs(spider.vx) * 0.5; }
+      if (spider.x > W - margin) { spider.x = W - margin; spider.vx = -Math.abs(spider.vx) * 0.5; }
+      if (spider.y < margin) { spider.y = margin; spider.vy = Math.abs(spider.vy) * 0.5; }
+      if (spider.y > H - margin) { spider.y = H - margin; spider.vy = -Math.abs(spider.vy) * 0.5; }
+
+      // Góc quay
+      if (sp > 0.5) {
+        spider.targetAngle = Math.atan2(spider.vy, spider.vx);
+      }
+      var da = spider.targetAngle - spider.angle;
+      while (da > Math.PI) da -= Math.PI * 2;
+      while (da < -Math.PI) da += Math.PI * 2;
+      spider.angle += da * 0.25;
+
+      // Nhịp chân
+      spider.legPhase += 0.4 + sp * 0.15;
+
+      // Vệt
+      spider.trail.push({ x: spider.x, y: spider.y, life: 1 });
+      if (spider.trail.length > 30) spider.trail.shift();
+      for (var i = 0; i < spider.trail.length; i++) {
+        spider.trail[i].life -= 0.04;
+      }
+
+      // Cập nhật HUD
+      if (hudNode) {
+        hudNode.textContent = 'NODE: ' + (spider.nodeIndex + 1) + '/' + nodes.length;
+      }
+    }
+
+    // ================================================================
+    // CHẾ ĐỘ TỰ ĐỘNG: ĐI THEO NODE TUẦN TỰ
+    // ================================================================
+    function updateAuto() {
+      if (spider.waitTimer > 0) {
+        spider.waitTimer--;
+        spider.legPhase += 0.15;
+        return;
+      }
+
+      var t = nodes[spider.nodeIndex];
+      var dx = t.x - spider.x;
+      var dy = t.y - spider.y;
+      var dist = Math.sqrt(dx * dx + dy * dy);
+
+      if (dist < 5) {
+        spider.x = t.x;
+        spider.y = t.y;
+        spider.vx = 0;
+        spider.vy = 0;
+        spider.waitTimer = t.delay;
+        spider.color = t.color;
+        spawnParticles(spider.x, spider.y, t.color, 14);
+        spider.nodeIndex = (spider.nodeIndex + 1) % nodes.length;
+        return;
+      }
+
+      spider.vx += (dx / dist) * spider.speed;
+      spider.vy += (dy / dist) * spider.speed;
+    }
+
+    // ================================================================
+    // CHẾ ĐỘ THỦ CÔNG: ĐI THEO CHUỘT
+    // ================================================================
+    function updateManual() {
+      if (!mouseActive) return;
+
+      var dx = mouseX - spider.x;
+      var dy = mouseY - spider.y;
+      var dist = Math.sqrt(dx * dx + dy * dy);
+
+      if (dist < 8) {
+        spider.vx *= 0.8;
+        spider.vy *= 0.8;
+        return;
+      }
+
+      spider.vx += (dx / dist) * 0.6;
+      spider.vy += (dy / dist) * 0.6;
+    }
+
+    // ================================================================
+    // CHẾ ĐỘ SĂN MỒI: ĐUỔI NHỆN CON GẦN NHẤT
+    // ================================================================
+    function updateHunt() {
+      if (babies.length === 0) return;
+
+      var nearest = null;
+      var minDist = Infinity;
+
+      for (var i = 0; i < babies.length; i++) {
+        var b = babies[i];
+        var dx = b.x - spider.x;
+        var dy = b.y - spider.y;
+        var d = Math.sqrt(dx * dx + dy * dy);
+        if (d < minDist) {
+          minDist = d;
+          nearest = b;
+        }
+      }
+
+      if (!nearest) return;
+
+      var ndx = nearest.x - spider.x;
+      var ndy = nearest.y - spider.y;
+      var nd = Math.sqrt(ndx * ndx + ndy * ndy);
+
+      if (nd < 8) {
+        // Bắt được mồi
+        spawnParticles(nearest.x, nearest.y, nearest.color, 18);
+        spider.color = nearest.color;
+        nearest.x = Math.random() * W;
+        nearest.y = Math.random() * H;
+        nearest.vx = 0;
+        nearest.vy = 0;
+        return;
+      }
+
+      spider.vx += (ndx / nd) * 0.7;
+      spider.vy += (ndy / nd) * 0.7;
+    }
+
+    // ================================================================
+    // CHẾ ĐỘ HỖN LOẠN: DI CHUYỂN NGẪU NHIÊN
+    // ================================================================
+    var chaosAngle = 0;
+    function updateChaos() {
+      chaosAngle += (Math.random() - 0.5) * 0.4;
+      spider.vx += Math.cos(chaosAngle) * 0.9;
+      spider.vy += Math.sin(chaosAngle) * 0.9;
+
+      // Đổi màu liên tục
+      var c = NODE_DATA[Math.floor(Math.random() * NODE_DATA.length)].color;
+      spider.color = c;
+
+      // Thỉnh thoảng tạo hạt
+      if (Math.random() < 0.15) {
+        spawnParticles(spider.x, spider.y, c, 3);
+      }
+    }
+
+    // ================================================================
+    // CẬP NHẬT NHỆN CON
+    // ================================================================
+    function updateBabies() {
+      for (var i = 0; i < babies.length; i++) {
+        var b = babies[i];
+        b.wander += (Math.random() - 0.5) * 0.3;
+        b.vx += Math.cos(b.wander) * 0.1;
+        b.vy += Math.sin(b.wander) * 0.1;
+
+        // Trốn nhện chính khi ở chế độ săn
+        if (mode === 'hunt') {
+          var dx = b.x - spider.x;
+          var dy = b.y - spider.y;
+          var d = Math.sqrt(dx * dx + dy * dy);
+          if (d < 150 && d > 0.1) {
+            b.vx += (dx / d) * 0.6;
+            b.vy += (dy / d) * 0.6;
+          }
+        }
+
+        b.vx *= 0.92;
+        b.vy *= 0.92;
+        b.x += b.vx;
+        b.y += b.vy;
+
+        if (b.x < 20) b.vx += 0.5;
+        if (b.x > W - 20) b.vx -= 0.5;
+        if (b.y < 20) b.vy += 0.5;
+        if (b.y > H - 20) b.vy -= 0.5;
+
+        if (Math.abs(b.vx) + Math.abs(b.vy) > 1) {
+          b.angle = Math.atan2(b.vy, b.vx);
+        }
+        b.legPhase += 0.5;
+      }
+    }
+
+    // ================================================================
+    // VẼ THÂN NHỆN
+    // ================================================================
+    function drawBody(c, s, color, angle, legPhase, glow) {
+      c.save();
+      c.rotate(angle + Math.PI / 2);
+
+      if (glow) {
+        c.shadowColor = color;
+        c.shadowBlur = 14 * s;
+      }
+
+      // 8 chân
+      c.strokeStyle = color;
+      c.lineWidth = 1.4 * s;
+      c.lineCap = 'round';
+      for (var i = 0; i < 8; i++) {
+        var side = i < 4 ? -1 : 1;
+        var idx = i % 4;
+        var baseAngle = -Math.PI / 2 + side * (0.5 + idx * 0.45);
+        var swing = Math.sin(legPhase + i) * 0.4;
+        var len1 = 7 * s;
+        var len2 = 9 * s;
+
+        var a1 = baseAngle + swing;
+        var x1 = Math.cos(a1) * len1;
+        var y1 = Math.sin(a1) * len1;
+
+        var a2 = a1 + side * 0.6;
+        var x2 = x1 + Math.cos(a2) * len2;
+        var y2 = y1 + Math.sin(a2) * len2;
+
+        c.beginPath();
+        c.moveTo(0, 0);
+        c.lineTo(x1, y1);
+        c.lineTo(x2, y2);
+        c.stroke();
+      }
+
+      // Bụng
+      c.fillStyle = color;
       c.beginPath();
-      c.moveTo(0, 0);
-      c.lineTo(x1, y1);
-      c.lineTo(x2, y2);
-      c.stroke();
+      c.ellipse(0, 2 * s, 3.5 * s, 4.5 * s, 0, 0, Math.PI * 2);
+      c.fill();
+
+      // Đầu ngực
+      c.beginPath();
+      c.ellipse(0, -3.5 * s, 2.5 * s, 2.5 * s, 0, 0, Math.PI * 2);
+      c.fill();
+
+      // Mắt
+      c.shadowBlur = 0;
+      c.fillStyle = '#ffffff';
+      c.beginPath();
+      c.arc(-1 * s, -4 * s, 0.7 * s, 0, Math.PI * 2);
+      c.arc(1 * s, -4 * s, 0.7 * s, 0, Math.PI * 2);
+      c.fill();
+
+      c.fillStyle = color;
+      c.beginPath();
+      c.arc(-1 * s, -4 * s, 0.35 * s, 0, Math.PI * 2);
+      c.arc(1 * s, -4 * s, 0.35 * s, 0, Math.PI * 2);
+      c.fill();
+
+      c.restore();
     }
 
-    c.fillStyle = this.color;
-    c.beginPath();
-    c.ellipse(0, 2 * s, 3.5 * s, 4.5 * s, 0, 0, Math.PI * 2);
-    c.fill();
+    // ================================================================
+    // VẼ NHỆN CHÍNH
+    // ================================================================
+    function drawSpider(c) {
+      c.save();
+      c.translate(spider.x, spider.y);
+      drawBody(c, spider.size, spider.color, spider.angle, spider.legPhase, true);
+      c.restore();
+    }
 
-    c.beginPath();
-    c.ellipse(0, -3.5 * s, 2.5 * s, 2.5 * s, 0, 0, Math.PI * 2);
-    c.fill();
+    // ================================================================
+    // VẼ NHỆN CON
+    // ================================================================
+    function drawBabies(c) {
+      for (var i = 0; i < babies.length; i++) {
+        var b = babies[i];
+        c.save();
+        c.translate(b.x, b.y);
+        c.globalAlpha = 0.55;
+        drawBody(c, b.size, b.color, b.angle, b.legPhase, false);
+        c.restore();
+      }
+      c.globalAlpha = 1;
+    }
 
-    c.fillStyle = '#fff';
-    c.beginPath();
-    c.arc(-1 * s, -4 * s, 0.7 * s, 0, Math.PI * 2);
-    c.arc(1 * s, -4 * s, 0.7 * s, 0, Math.PI * 2);
-    c.fill();
+    // ================================================================
+    // VẼ VỆT
+    // ================================================================
+    function drawTrail(c) {
+      for (var i = 0; i < spider.trail.length; i++) {
+        var t = spider.trail[i];
+        if (t.life <= 0) continue;
+        c.globalAlpha = t.life * 0.35;
+        c.fillStyle = spider.color;
+        c.beginPath();
+        c.arc(t.x, t.y, spider.size * t.life * 1.2, 0, Math.PI * 2);
+        c.fill();
+      }
+      c.globalAlpha = 1;
+    }
 
-    c.restore();
-  }
-}
+    // ================================================================
+    // VẼ HẠT
+    // ================================================================
+    function drawParticles(c) {
+      for (var i = 0; i < particles.length; i++) {
+        var p = particles[i];
+        c.globalAlpha = p.life;
+        c.fillStyle = p.color;
+        c.beginPath();
+        c.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+        c.fill();
+      }
+      c.globalAlpha = 1;
+    }
 
-const spider = new Spider();
+    // ================================================================
+    // VẼ SAO NỀN
+    // ================================================================
+    function drawStars(c, time) {
+      for (var i = 0; i < stars.length; i++) {
+        var s = stars[i];
+        var a = s.a * (0.6 + 0.4 * Math.sin(time * 0.001 + s.phase));
+        c.globalAlpha = a;
+        c.fillStyle = '#ffffff';
+        c.beginPath();
+        c.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        c.fill();
+      }
+      c.globalAlpha = 1;
+    }
 
-// Vòng lặp render
-function loop() {
-  // Vệt mờ tạo hiệu ứng chuyển động
-  ctx.fillStyle = 'rgba(10, 10, 18, 0.3)';
-  ctx.fillRect(0, 0, W, H);
+    // ================================================================
+    // VẼ NODE
+    // ================================================================
+    function drawNodes(c, time) {
+      for (var i = 0; i < nodes.length; i++) {
+        var n = nodes[i];
+        var isTarget = (mode === 'auto' && i === spider.nodeIndex);
+        var pulse = 1 + Math.sin(time * 0.003 + n.pulse) * 0.08;
 
-  // Vẽ các node lệnh
-  for (let i = 0; i < nodes.length; i++) {
-    const n = nodes[i];
-    const isTarget = i === spider.nodeIndex;
+        if (isTarget) {
+          // Vòng phát sáng ngoài
+          c.beginPath();
+          c.arc(n.x, n.y, n.radius * pulse * 1.6, 0, Math.PI * 2);
+          c.strokeStyle = n.color;
+          c.globalAlpha = 0.15;
+          c.lineWidth = 1;
+          c.stroke();
 
-    ctx.beginPath();
-    ctx.arc(n.x, n.y, n.radius, 0, Math.PI * 2);
-    ctx.fillStyle = isTarget
-      ? 'rgba(192, 96, 255, 0.15)'
-      : 'rgba(255, 255, 255, 0.03)';
-    ctx.fill();
+          c.beginPath();
+          c.arc(n.x, n.y, n.radius * pulse * 1.3, 0, Math.PI * 2);
+          c.globalAlpha = 0.25;
+          c.stroke();
+          c.globalAlpha = 1;
+        }
 
-    ctx.strokeStyle = isTarget ? n.color : 'rgba(255, 255, 255, 0.15)';
-    ctx.lineWidth = isTarget ? 2 : 1;
-    ctx.stroke();
+        // Vòng chính
+        c.beginPath();
+        c.arc(n.x, n.y, n.radius * pulse, 0, Math.PI * 2);
+        c.fillStyle = isTarget
+          ? 'rgba(192, 96, 255, 0.12)'
+          : 'rgba(255, 255, 255, 0.02)';
+        c.fill();
 
-    ctx.fillStyle = isTarget ? '#fff' : 'rgba(255, 255, 255, 0.6)';
-    ctx.font = '10px Courier New';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(n.label, n.x, n.y);
-  }
+        c.strokeStyle = isTarget ? n.color : 'rgba(255, 255, 255, 0.12)';
+        c.lineWidth = isTarget ? 1.5 : 1;
+        c.stroke();
 
-  // Cập nhật và vẽ nhện
-  spider.update();
-  spider.draw(ctx);
+        // Nhãn
+        c.fillStyle = isTarget ? '#ffffff' : 'rgba(255, 255, 255, 0.45)';
+        c.font = '10px Courier New';
+        c.textAlign = 'center';
+        c.textBaseline = 'middle';
+        c.fillText(n.label, n.x, n.y);
+      }
+    }
 
-  requestAnimationFrame(loop);
-}
+    // ================================================================
+    // VÒNG LẶP RENDER
+    // ================================================================
+    var startTime = performance.now();
+    function loop(now) {
+      var t = now - startTime;
 
-// Lắng nghe sự kiện resize
-window.addEventListener('resize', resize);
+      // Xóa nền có vệt mờ
+      ctx.fillStyle = 'rgba(10, 10, 18, 0.22)';
+      ctx.fillRect(0, 0, W, H);
 
-// Khởi tạo
-resize();
-loop();
+      drawStars(ctx, t);
+      drawNodes(ctx, t);
+      drawTrail(ctx);
+
+      updateSpider();
+      drawSpider(ctx);
+
+      updateBabies();
+      drawBabies(ctx);
+
+      updateParticles();
+      drawParticles(ctx);
+
+      requestAnimationFrame(loop);
+    }
+
+    // ================================================================
+    // SỰ KIỆN CHUỘT
+    // ================================================================
+    window.addEventListener('mousemove', function (e) {
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+      mouseActive = true;
+    });
+
+    window.addEventListener('mouseleave', function () {
+      mouseActive = false;
+    });
+
+    // ================================================================
+    // SỰ KIỆN CẢM ỨNG
+    // ================================================================
+    window.addEventListener('touchmove', function (e) {
+      if (e.touches.length > 0) {
+        mouseX = e.touches[0].clientX;
+        mouseY = e.touches[0].clientY;
+        mouseActive = true;
+      }
+    }, { passive: true });
+
+    window.addEventListener('touchend', function () {
+      mouseActive = false;
+    });
+
+    // ================================================================
+    // SỰ KIỆN NÚT
+    // ================================================================
+    for (var i = 0; i < buttons.length; i++) {
+      (function (btn) {
+        btn.addEventListener('click', function () {
+          var newMode = btn.getAttribute('data-mode');
+          if (!newMode) return;
+
+          mode = newMode;
+
+          for (var j = 0; j < buttons.length; j++) {
+            buttons[j].classList.remove('active');
+          }
+          btn.classList.add('active');
+
+          // Cập nhật HUD
+          if (hudMode) {
+            hudMode.textContent = newMode.toUpperCase();
+          }
+
+          // Thông báo trạng thái
+          if (hudStatus) {
+            hudStatus.textContent = '● ' + newMode.toUpperCase();
+          }
+
+          // Nếu thoát khỏi chế độ săn mồi, làm mới nhện con
+          if (newMode !== 'hunt') {
+            for (var k = 0; k < babies.length; k++) {
+              babies[k].vx = 0;
+              babies[k].vy = 0;
+            }
+          }
+        });
+      })(buttons[i]);
+    }
+
+    // ================================================================
+    // SỰ KIỆN RESIZE
+    // ================================================================
+    var resizeTimer = null;
+    window.addEventListener('resize', function () {
+      if (resizeTimer) clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(resize, 100);
+    });
+
+    // ================================================================
+    // KHỞI TẠO
+    // ================================================================
+    resize();
+    requestAnimationFrame(loop);
+
+    console.log('[Spider] Đã khởi động — chế độ:', mode);
+  });
+})();
 </script>
 </body>
 </html>
