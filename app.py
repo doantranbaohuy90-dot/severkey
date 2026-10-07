@@ -1,9 +1,15 @@
-# Điểm khởi chạy chính của ứng dụng Flask
+# app.py
+# Ứng dụng Flask chính
+# Khởi tạo, đăng ký route, API và xử lý lỗi
+
 import os
 import logging
 from datetime import datetime
 from flask import Flask, render_template, jsonify, request
 from dotenv import load_dotenv
+
+from api import register_api
+from spider_engine import get_spider_payload, build_node_config, build_spider_config
 
 # Nạp biến môi trường
 load_dotenv()
@@ -31,6 +37,9 @@ BFS_GRAPH = {
 
 
 def create_app() -> Flask:
+    """
+    Tạo và cấu hình ứng dụng Flask.
+    """
     # Khởi tạo ứng dụng Flask
     app = Flask(
         __name__,
@@ -58,9 +67,13 @@ def create_app() -> Flask:
             response.headers["Expires"] = "0"
         return response
 
-    # Đăng ký route
+    # Đăng ký route giao diện
     register_routes(app)
+
+    # Đăng ký API từ mô-đun api.py
     register_api(app)
+
+    # Đăng ký xử lý lỗi
     register_errors(app)
 
     logger.info("Ứng dụng đã khởi tạo")
@@ -71,6 +84,9 @@ def create_app() -> Flask:
 # ROUTE GIAO DIỆN
 # ==========================================================================
 def register_routes(app: Flask) -> None:
+    """
+    Đăng ký các route giao diện HTML.
+    """
 
     @app.route("/")
     def index():
@@ -114,93 +130,12 @@ def register_routes(app: Flask) -> None:
 
 
 # ==========================================================================
-# ROUTE API
-# ==========================================================================
-def register_api(app: Flask) -> None:
-
-    @app.route("/api/health")
-    def api_health():
-        return jsonify({
-            "status": "ok",
-            "time": datetime.utcnow().isoformat(),
-            "version": "1.0.0",
-        })
-
-    @app.route("/api/version")
-    def api_version():
-        return jsonify({
-            "name": "ho-so-cua-toi",
-            "version": "1.0.0",
-            "build": "2026.10.07",
-        })
-
-    @app.route("/api/owner")
-    def api_owner():
-        return jsonify({
-            "name": "Doãn Trần Bảo Huy",
-            "telegram": "https://t.me/baohuyno1",
-            "zalo": "https://zalo.me/0347635805",
-            "phone": "0347635805",
-            "email": "huydoan633@gmail.com",
-            "role": "Seller & Website, Bot Developer",
-        })
-
-    @app.route("/api/projects")
-    def api_projects():
-        items = [
-            {"id": 1, "name": "Hồ sơ cá nhân", "status": "done"},
-            {"id": 2, "name": "Bot Telegram", "status": "wip"},
-            {"id": 3, "name": "Web API", "status": "done"},
-            {"id": 4, "name": "Con nhện chạy", "status": "done"},
-            {"id": 5, "name": "Tìm đường BFS", "status": "done"},
-        ]
-        return jsonify({"count": len(items), "items": items})
-
-    @app.route("/api/bfs/graph")
-    def api_bfs_graph():
-        # Trả về đồ thị BFS
-        return jsonify({
-            "graph": BFS_GRAPH,
-            "nodes": list(BFS_GRAPH.keys()),
-        })
-
-    @app.route("/api/profile", methods=["POST"])
-    def api_save_profile():
-        payload = request.get_json(silent=True)
-
-        if not isinstance(payload, dict):
-            return jsonify({"error": "Dữ liệu không hợp lệ"}), 400
-
-        max_fields = app.config["MAX_PROFILE_FIELDS"]
-        if len(payload) > max_fields:
-            return jsonify({"error": f"Vượt quá {max_fields} trường"}), 400
-
-        logger.info("Nhận hồ sơ từ %s", request.remote_addr)
-        return jsonify({
-            "status": "saved",
-            "received": payload,
-            "time": datetime.utcnow().isoformat(),
-        })
-
-    @app.route("/api/profile/<int:user_id>")
-    def api_get_profile(user_id: int):
-        if user_id <= 0:
-            return jsonify({"error": "Mã không hợp lệ"}), 400
-
-        return jsonify({
-            "user_id": user_id,
-            "data": {
-                "name": "Doãn Trần Bảo Huy",
-                "role": "Developer",
-            },
-            "time": datetime.utcnow().isoformat(),
-        })
-
-
-# ==========================================================================
 # XỬ LÝ LỖI
 # ==========================================================================
 def register_errors(app: Flask) -> None:
+    """
+    Đăng ký các handler xử lý lỗi.
+    """
 
     @app.errorhandler(404)
     def not_found(error):
