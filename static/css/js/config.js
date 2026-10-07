@@ -19,7 +19,7 @@
     // ----------------------------------------------------------------------
     APP_NAME: 'Hồ sơ của tôi',
     APP_VERSION: '1.0.0',
-    APP_BUILD: '2026.10.06',
+    APP_BUILD: '2026.10.07',
 
     // ----------------------------------------------------------------------
     // ĐƯỜNG DẪN API
@@ -31,8 +31,10 @@
       OWNER:    '/api/owner',
       PROJECTS: '/api/projects',
       PROFILE:  '/api/profile',
+      STATS:    '/api/stats',
+      LOGS:     '/api/logs',
       SPIDER:   '/api/spider/config',
-      NODES:    '/api/spider/nodes',
+      NODES:    '/api/spider/nodes'
     },
 
     // ----------------------------------------------------------------------
@@ -59,10 +61,10 @@
       telegram: 'https://t.me/baohuyno1',
       telegramUsername: '@baohuyno1',
       zalo: 'https://zalo.me/0347635805',
-      zaloPhone: '',
+      zaloPhone: '0347635805',
       phone: '0347635805',
       email: 'huydoan633@gmail.com',
-      role: 'Seller & Website, Bot Developer',
+      role: 'Seller & Website, Bot Developer'
     },
 
     // ----------------------------------------------------------------------
@@ -74,15 +76,15 @@
         label: 'Telegram',
         value: '@baohuyno1',
         url: 'https://t.me/baohuyno1',
-        enabled: true,
+        enabled: true
       },
       {
         id: 'zalo',
         label: 'Zalo',
         value: '0347635805',
         url: 'https://zalo.me/0347635805',
-        enabled: true,
-      },
+        enabled: true
+      }
     ],
 
     // ----------------------------------------------------------------------
@@ -93,7 +95,7 @@
       ANIMATION_DURATION: 600,
       TOAST_DURATION: 3000,
       DEBOUNCE_DELAY: 300,
-      THROTTLE_DELAY: 300,
+      THROTTLE_DELAY: 300
     },
 
     // ----------------------------------------------------------------------
@@ -103,7 +105,7 @@
       THEME: 'app_theme',
       LOCALE: 'app_locale',
       LAST_VISIT: 'app_last_visit',
-      PROFILE: 'app_profile',
+      PROFILE: 'app_profile'
     },
 
     // ----------------------------------------------------------------------
@@ -113,7 +115,7 @@
       MAX_PROFILE_FIELDS: 20,
       MAX_FIELD_NAME_LENGTH: 32,
       MAX_FIELD_VALUE_LENGTH: 500,
-      MAX_NODES: 60,
+      MAX_NODES: 60
     },
 
     // ----------------------------------------------------------------------
@@ -126,8 +128,8 @@
       HEALTH_CHECK_INTERVAL: 60000,
       HEADERS: {
         'Accept': 'application/json',
-        'Content-Type': 'application/json',
-      },
+        'Content-Type': 'application/json'
+      }
     },
 
     // ----------------------------------------------------------------------
@@ -135,19 +137,19 @@
     // ----------------------------------------------------------------------
     SPIDER: {
       MAX_SPEED: 8,
-      SPEED: 0.3,
-      SIZE: 2.4,
+      SPEED: 0.35,
+      SIZE: 2.0,
       COLOR: '#c060ff',
-      TRAIL_LENGTH: 30,
-      BABIES_COUNT: 4,
+      TRAIL_LENGTH: 25,
+      BABIES_COUNT: 5,
       BABY_SIZE: 1.1,
       BABY_MAX_SPEED: 3,
-      PARTICLE_BURST: 12,
+      PARTICLE_BURST: 10,
       PARTICLE_DECAY: 0.02,
-      ESCAPE_RADIUS: 120,
-      ESCAPE_FORCE: 0.5,
+      ESCAPE_RADIUS: 140,
+      ESCAPE_FORCE: 0.6,
       CANVAS_HEIGHT: 480,
-      CANVAS_HEIGHT_MOBILE: 360,
+      CANVAS_HEIGHT_MOBILE: 360
     },
 
     // ----------------------------------------------------------------------
@@ -160,14 +162,14 @@
       ENABLE_ANIMATIONS: true,
       ENABLE_STORAGE: true,
       ENABLE_SPIDER: true,
-      ENABLE_API: true,
+      ENABLE_API: true
     },
 
     // ----------------------------------------------------------------------
     // CHẾ ĐỘ
     // ----------------------------------------------------------------------
     DEBUG: false,
-    ENV: 'production',
+    ENV: 'production'
   };
 
   // Đóng băng đối tượng con để tránh thay đổi ngoài ý muốn
