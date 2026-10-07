@@ -1,69 +1,90 @@
 // ==========================================================================
-// ENGINE CON NHỆN CHẠY NÂNG CAO
-// Đọc cấu hình từ server và điều khiển nhện, nhện con, hạt, vệt
+// ENGINE CON NHỆN CHẠY TRÊN CANVAS
+// Tự chứa, không phụ thuộc tệp JS khác. Hỗ trợ 2 chế độ:
+//   1. Canvas nền toàn màn hình: id="bg-spider"
+//   2. Canvas trong card: id="spider-canvas"
 // ==========================================================================
 
 (function () {
   'use strict';
 
-  // Chờ DOM sẵn sàng
-  document.addEventListener('DOMContentLoaded', function () {
-
-    // Lấy canvas
-    var canvas = document.getElementById('spider-canvas');
-    if (!canvas) {
-      console.error('[Spider] Không tìm thấy canvas');
-      return;
+  function ready(fn) {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', fn);
+    } else {
+      fn();
     }
+  }
+
+  ready(function () {
+
+    // ======================================================================
+    // LẤY CANVAS
+    // ======================================================================
+    var canvas = document.getElementById('spider-canvas') ||
+                 document.getElementById('bg-spider');
+    if (!canvas) return;
+
     var ctx = canvas.getContext('2d');
-    var statEl = document.getElementById('spider-stat');
+    var isBackground = canvas.id === 'bg-spider';
 
-    // Đọc payload từ server
-    var payload = window.SPIDER_PAYLOAD || {};
-    var nodeData = (payload.nodes && payload.nodes.nodes) || [];
-    var spiderCfg = (payload.spider && payload.spider.main) || {};
-    var babiesCfg = (payload.spider && payload.spider.babies) || {};
-    var particleCfg = (payload.spider && payload.spider.particles) || {};
-    var escapeCfg = (payload.spider && payload.spider.escape) || {};
-
-    // Biến kích thước
+    // ======================================================================
+    // BIẾN KÍCH THƯỚC
+    // ======================================================================
     var W = 0, H = 0;
     var DPR = window.devicePixelRatio || 1;
 
-    // Chuột
+    // ======================================================================
+    // CHUỘT
+    // ======================================================================
     var mouseX = -1000, mouseY = -1000, mouseActive = false;
 
-    // Mảng node
+    // ======================================================================
+    // DANH SÁCH NHÃN
+    // ======================================================================
+    var LABELS = [
+      'staff hired', 'source packet', 'clear object', 'drafts',
+      'role', 'objective', 'ship', 'one', 'manual run', 'start',
+      'result', 'repeat', 'use only', 'actually', 'provided',
+      'brand', 'fact sheet', 'transcript', 'saved', 'feedback',
+      'next', 'approve', 'publishing', 'external', 'context',
+      'researcher', 'writer', 'producer', 'editor', 'publisher'
+    ];
+
+    var COLORS = [
+      '#ff5a8a', '#ff8a5a', '#ffd75a', '#a8ff5a', '#5affa8',
+      '#5ad7ff', '#5a8aff', '#a85aff', '#ff5ad7', '#ff5a5a'
+    ];
+
+    // ======================================================================
+    // TRẠNG THÁI
+    // ======================================================================
     var nodes = [];
-
-    // Nhện chính
-    var spider = {
-      index: 0,
-      x: 0, y: 0,
-      vx: 0, vy: 0,
-      angle: 0,
-      targetAngle: 0,
-      legPhase: 0,
-      wait: 0,
-      size: spiderCfg.size || 2.4,
-      color: spiderCfg.color || '#c060ff',
-      speed: spiderCfg.speed || 0.3,
-      maxSpeed: spiderCfg.maxSpeed || 8,
-      trail: [],
-    };
-
-    // Nhện con
+    var particles = [];
     var babies = [];
 
-    // Hạt
-    var particles = [];
+    var spider = {
+      index: 0, x: 0, y: 0, vx: 0, vy: 0,
+      angle: 0, targetAngle: 0, legPhase: 0, wait: 0,
+      size: 2.0, color: '#c060ff', speed: 0.35, maxSpeed: 8,
+      trail: []
+    };
 
-    // ---------------------------------------------------------------------
-    // Cập nhật kích thước
-    // ---------------------------------------------------------------------
+    // ======================================================================
+    // CẬP NHẬT KÍCH THƯỚC
+    // ======================================================================
     function resize() {
-      W = window.innerWidth;
-      H = window.innerHeight;
+      if (isBackground) {
+        W = window.innerWidth;
+        H = window.innerHeight;
+      } else {
+        var rect = canvas.parentElement
+          ? canvas.parentElement.getBoundingClientRect()
+          : { width: window.innerWidth, height: 480 };
+        W = Math.max(rect.width, 320);
+        H = 480;
+      }
+
       canvas.width = W * DPR;
       canvas.height = H * DPR;
       canvas.style.width = W + 'px';
@@ -75,121 +96,116 @@
       buildBabies();
     }
 
-    // ---------------------------------------------------------------------
-    // Xây dựng node
-    // ---------------------------------------------------------------------
+    // ======================================================================
+    // XÂY DỰNG NODE
+    // ======================================================================
     function buildNodes() {
       nodes = [];
-      if (nodeData.length === 0) return;
       if (W <= 0 || H <= 0) return;
 
-      var paddingX = Math.max(100, W / 8);
-      var paddingY = Math.max(60, H / 10);
+      var paddingX = Math.max(90, W / 7);
+      var paddingY = Math.max(50, H / 9);
       var cols = Math.max(2, Math.floor(W / paddingX));
-      var rows = Math.ceil(nodeData.length / cols);
+      var rows = Math.ceil(LABELS.length / cols);
       var offsetX = (W - (cols - 1) * paddingX) / 2;
       var offsetY = (H - (rows - 1) * paddingY) / 2;
 
-      for (var i = 0; i < nodeData.length; i++) {
-        var src = nodeData[i];
+      for (var i = 0; i < LABELS.length; i++) {
         var col = i % cols;
         var row = Math.floor(i / cols);
         nodes.push({
-          label: src.label,
-          color: src.color,
-          radius: src.radius || 30,
+          label: LABELS[i],
+          color: COLORS[i % COLORS.length],
+          radius: isBackground ? 24 : 26,
           x: offsetX + col * paddingX,
           y: offsetY + row * paddingY,
           pulse: Math.random() * Math.PI * 2,
-          delay: src.delay || 20,
+          delay: 15 + Math.floor(Math.random() * 15)
         });
       }
     }
 
-    // ---------------------------------------------------------------------
-    // Đặt lại nhện chính
-    // ---------------------------------------------------------------------
+    // ======================================================================
+    // ĐẶT LẠI NHỆN
+    // ======================================================================
     function resetSpider() {
-      if (nodes.length === 0) return;
+      if (!nodes.length) return;
       spider.index = 0;
       spider.x = nodes[0].x;
       spider.y = nodes[0].y;
       spider.vx = 0;
       spider.vy = 0;
       spider.trail = [];
+
+      var statEl = document.getElementById('spider-stat');
       if (statEl) statEl.textContent = '0 / ' + nodes.length;
     }
 
-    // ---------------------------------------------------------------------
-    // Tạo nhện con
-    // ---------------------------------------------------------------------
+    // ======================================================================
+    // TẠO NHỆN CON
+    // ======================================================================
     function buildBabies() {
       babies = [];
-      var count = babiesCfg.count || 4;
+      var count = isBackground ? 5 : 4;
       for (var i = 0; i < count; i++) {
         babies.push({
-          x: W / 2 + (Math.random() - 0.5) * 200,
-          y: H / 2 + (Math.random() - 0.5) * 200,
+          x: Math.random() * W,
+          y: Math.random() * H,
           vx: 0, vy: 0,
           legPhase: Math.random() * Math.PI * 2,
-          size: (babiesCfg.size || 1.1) + Math.random() * 0.4,
-          color: ['#ff5a8a', '#5ad7ff', '#a8ff5a', '#ffd75a'][i % 4],
+          size: 0.9 + Math.random() * 0.4,
+          color: COLORS[i % COLORS.length],
           angle: 0,
-          wander: Math.random() * Math.PI * 2,
+          wander: Math.random() * Math.PI * 2
         });
       }
     }
 
-    // ---------------------------------------------------------------------
-    // Sinh hạt
-    // ---------------------------------------------------------------------
+    // ======================================================================
+    // SINH HẠT
+    // ======================================================================
     function spawnParticles(x, y, color) {
-      var burst = particleCfg.burst || 12;
-      for (var i = 0; i < burst; i++) {
+      for (var i = 0; i < 10; i++) {
         var a = Math.random() * Math.PI * 2;
-        var speed = 1 + Math.random() * 3;
+        var sp = 1 + Math.random() * 3;
         particles.push({
           x: x, y: y,
-          vx: Math.cos(a) * speed,
-          vy: Math.sin(a) * speed,
-          life: 1,
-          color: color,
-          size: 1 + Math.random() * 2,
+          vx: Math.cos(a) * sp,
+          vy: Math.sin(a) * sp,
+          life: 1, color: color,
+          size: 1 + Math.random() * 2
         });
       }
     }
 
-    // ---------------------------------------------------------------------
-    // Cập nhật hạt
-    // ---------------------------------------------------------------------
+    // ======================================================================
+    // CẬP NHẬT HẠT
+    // ======================================================================
     function updateParticles() {
-      var decay = particleCfg.decay || 0.02;
       for (var i = particles.length - 1; i >= 0; i--) {
         var p = particles[i];
         p.x += p.vx;
         p.y += p.vy;
         p.vx *= 0.95;
         p.vy *= 0.95;
-        p.life -= decay;
+        p.life -= 0.02;
         if (p.life <= 0) particles.splice(i, 1);
       }
     }
 
-    // ---------------------------------------------------------------------
-    // Cập nhật nhện chính
-    // ---------------------------------------------------------------------
+    // ======================================================================
+    // CẬP NHẬT NHỆN CHÍNH
+    // ======================================================================
     function updateSpider() {
-      if (nodes.length === 0) return;
+      if (!nodes.length) return;
 
-      // Trốn chuột
-      if (mouseActive && escapeCfg.radius) {
+      if (mouseActive) {
         var mdx = spider.x - mouseX;
         var mdy = spider.y - mouseY;
-        var mdist = Math.sqrt(mdx * mdx + mdy * mdy);
-        if (mdist < escapeCfg.radius && mdist > 0.1) {
-          var force = escapeCfg.force || 0.5;
-          spider.vx += (mdx / mdist) * force;
-          spider.vy += (mdy / mdist) * force;
+        var md = Math.sqrt(mdx * mdx + mdy * mdy);
+        if (md < 140 && md > 0.1) {
+          spider.vx += (mdx / md) * 0.6;
+          spider.vy += (mdy / md) * 0.6;
         }
       }
 
@@ -199,20 +215,21 @@
         return;
       }
 
-      var target = nodes[spider.index];
-      var dx = target.x - spider.x;
-      var dy = target.y - spider.y;
+      var t = nodes[spider.index];
+      var dx = t.x - spider.x;
+      var dy = t.y - spider.y;
       var dist = Math.sqrt(dx * dx + dy * dy);
 
       if (dist < 6) {
-        spider.x = target.x;
-        spider.y = target.y;
+        spider.x = t.x;
+        spider.y = t.y;
         spider.vx = 0;
         spider.vy = 0;
-        spider.wait = target.delay || 20;
-        spider.color = target.color;
-        spawnParticles(spider.x, spider.y, target.color);
+        spider.wait = t.delay;
+        spider.color = t.color;
+        spawnParticles(spider.x, spider.y, t.color);
 
+        var statEl = document.getElementById('spider-stat');
         if (statEl) {
           statEl.textContent = (spider.index + 1) + ' / ' + nodes.length;
         }
@@ -235,9 +252,7 @@
       spider.x += spider.vx;
       spider.y += spider.vy;
 
-      if (sp > 0.5) {
-        spider.targetAngle = Math.atan2(spider.vy, spider.vx);
-      }
+      if (sp > 0.5) spider.targetAngle = Math.atan2(spider.vy, spider.vx);
       var da = spider.targetAngle - spider.angle;
       while (da > Math.PI) da -= Math.PI * 2;
       while (da < -Math.PI) da += Math.PI * 2;
@@ -246,18 +261,16 @@
       spider.legPhase += 0.4 + sp * 0.15;
 
       spider.trail.push({ x: spider.x, y: spider.y, life: 1 });
-      var maxTrail = spiderCfg.trailLength || 30;
-      if (spider.trail.length > maxTrail) spider.trail.shift();
+      if (spider.trail.length > 25) spider.trail.shift();
       for (var i = 0; i < spider.trail.length; i++) {
-        spider.trail[i].life -= 0.04;
+        spider.trail[i].life -= 0.05;
       }
     }
 
-    // ---------------------------------------------------------------------
-    // Cập nhật nhện con
-    // ---------------------------------------------------------------------
+    // ======================================================================
+    // CẬP NHẬT NHỆN CON
+    // ======================================================================
     function updateBabies() {
-      var maxSpeed = babiesCfg.maxSpeed || 3;
       for (var i = 0; i < babies.length; i++) {
         var b = babies[i];
         b.wander += (Math.random() - 0.5) * 0.3;
@@ -267,20 +280,13 @@
         var dx = b.x - spider.x;
         var dy = b.y - spider.y;
         var d = Math.sqrt(dx * dx + dy * dy);
-        if (d < 80 && d > 0.1) {
+        if (d < 90 && d > 0.1) {
           b.vx += (dx / d) * 0.3;
           b.vy += (dy / d) * 0.3;
         }
 
         b.vx *= 0.92;
         b.vy *= 0.92;
-
-        var bsp = Math.sqrt(b.vx * b.vx + b.vy * b.vy);
-        if (bsp > maxSpeed) {
-          b.vx = (b.vx / bsp) * maxSpeed;
-          b.vy = (b.vy / bsp) * maxSpeed;
-        }
-
         b.x += b.vx;
         b.y += b.vy;
 
@@ -296,10 +302,10 @@
       }
     }
 
-    // ---------------------------------------------------------------------
-    // Vẽ thân nhện dùng chung
-    // ---------------------------------------------------------------------
-    function drawSpiderBody(c, s, color, angle, legPhase, glow) {
+    // ======================================================================
+    // VẼ THÂN NHỆN
+    // ======================================================================
+    function drawBody(c, s, color, angle, legPhase, glow) {
       c.save();
       c.rotate(angle + Math.PI / 2);
 
@@ -309,8 +315,9 @@
       }
 
       c.strokeStyle = color;
-      c.lineWidth = 1.5 * s;
+      c.lineWidth = 1.4 * s;
       c.lineCap = 'round';
+
       for (var i = 0; i < 8; i++) {
         var side = i < 4 ? -1 : 1;
         var idx = i % 4;
@@ -359,34 +366,34 @@
       c.restore();
     }
 
-    // ---------------------------------------------------------------------
-    // Vẽ nhện chính
-    // ---------------------------------------------------------------------
+    // ======================================================================
+    // VẼ NHỆN CHÍNH
+    // ======================================================================
     function drawSpider(c) {
       c.save();
       c.translate(spider.x, spider.y);
-      drawSpiderBody(c, spider.size, spider.color, spider.angle, spider.legPhase, true);
+      drawBody(c, spider.size, spider.color, spider.angle, spider.legPhase, true);
       c.restore();
     }
 
-    // ---------------------------------------------------------------------
-    // Vẽ nhện con
-    // ---------------------------------------------------------------------
+    // ======================================================================
+    // VẼ NHỆN CON
+    // ======================================================================
     function drawBabies(c) {
       for (var i = 0; i < babies.length; i++) {
         var b = babies[i];
         c.save();
         c.translate(b.x, b.y);
-        c.globalAlpha = 0.7;
-        drawSpiderBody(c, b.size, b.color, b.angle, b.legPhase, false);
+        c.globalAlpha = 0.6;
+        drawBody(c, b.size, b.color, b.angle, b.legPhase, false);
         c.restore();
       }
       c.globalAlpha = 1;
     }
 
-    // ---------------------------------------------------------------------
-    // Vẽ vệt
-    // ---------------------------------------------------------------------
+    // ======================================================================
+    // VẼ VỆT
+    // ======================================================================
     function drawTrail(c) {
       for (var i = 0; i < spider.trail.length; i++) {
         var t = spider.trail[i];
@@ -400,9 +407,9 @@
       c.globalAlpha = 1;
     }
 
-    // ---------------------------------------------------------------------
-    // Vẽ hạt
-    // ---------------------------------------------------------------------
+    // ======================================================================
+    // VẼ HẠT
+    // ======================================================================
     function drawParticles(c) {
       for (var i = 0; i < particles.length; i++) {
         var p = particles[i];
@@ -415,9 +422,9 @@
       c.globalAlpha = 1;
     }
 
-    // ---------------------------------------------------------------------
-    // Vẽ node
-    // ---------------------------------------------------------------------
+    // ======================================================================
+    // VẼ NODE
+    // ======================================================================
     function drawNodes(c, time) {
       for (var i = 0; i < nodes.length; i++) {
         var n = nodes[i];
@@ -428,7 +435,7 @@
           c.beginPath();
           c.arc(n.x, n.y, n.radius * pulse * 1.4, 0, Math.PI * 2);
           c.strokeStyle = n.color;
-          c.globalAlpha = 0.3;
+          c.globalAlpha = 0.25;
           c.lineWidth = 1;
           c.stroke();
           c.globalAlpha = 1;
@@ -437,30 +444,32 @@
         c.beginPath();
         c.arc(n.x, n.y, n.radius * pulse, 0, Math.PI * 2);
         c.fillStyle = isTarget
-          ? 'rgba(192, 96, 255, 0.15)'
-          : 'rgba(255, 255, 255, 0.03)';
+          ? 'rgba(192, 96, 255, 0.12)'
+          : 'rgba(255, 255, 255, 0.02)';
         c.fill();
 
-        c.strokeStyle = isTarget ? n.color : 'rgba(255, 255, 255, 0.15)';
-        c.lineWidth = isTarget ? 2 : 1;
+        c.strokeStyle = isTarget ? n.color : 'rgba(255, 255, 255, 0.12)';
+        c.lineWidth = isTarget ? 1.5 : 1;
         c.stroke();
 
-        c.fillStyle = isTarget ? '#ffffff' : 'rgba(255, 255, 255, 0.55)';
-        c.font = '11px Courier New';
+        c.fillStyle = isTarget ? '#ffffff' : 'rgba(255, 255, 255, 0.45)';
+        c.font = '10px Courier New';
         c.textAlign = 'center';
         c.textBaseline = 'middle';
         c.fillText(n.label, n.x, n.y);
       }
     }
 
-    // ---------------------------------------------------------------------
-    // Vòng lặp render
-    // ---------------------------------------------------------------------
+    // ======================================================================
+    // VÒNG LẶP RENDER
+    // ======================================================================
     var startTime = performance.now();
     function loop(now) {
       var t = now - startTime;
 
-      ctx.fillStyle = 'rgba(5, 5, 8, 0.25)';
+      ctx.fillStyle = isBackground
+        ? 'rgba(10, 10, 18, 0.15)'
+        : 'rgba(5, 5, 8, 0.3)';
       ctx.fillRect(0, 0, W, H);
 
       drawNodes(ctx, t);
@@ -477,18 +486,21 @@
       requestAnimationFrame(loop);
     }
 
-    // ---------------------------------------------------------------------
-    // Sự kiện
-    // ---------------------------------------------------------------------
+    // ======================================================================
+    // SỰ KIỆN
+    // ======================================================================
     window.addEventListener('resize', resize);
+
     window.addEventListener('mousemove', function (e) {
       mouseX = e.clientX;
       mouseY = e.clientY;
       mouseActive = true;
     });
+
     window.addEventListener('mouseleave', function () {
       mouseActive = false;
     });
+
     window.addEventListener('touchmove', function (e) {
       if (e.touches.length > 0) {
         mouseX = e.touches[0].clientX;
@@ -496,12 +508,48 @@
         mouseActive = true;
       }
     }, { passive: true });
+
     window.addEventListener('touchend', function () {
       mouseActive = false;
     });
 
-    // Khởi tạo
+    // ======================================================================
+    // ĐIỀU KHIỂN
+    // ======================================================================
+    var paused = false;
+
+    var btnPause = document.getElementById('btn-pause');
+    var btnReset = document.getElementById('btn-reset');
+
+    if (btnPause) {
+      btnPause.addEventListener('click', function () {
+        paused = !paused;
+        btnPause.textContent = paused ? 'TIẾP TỤC' : 'TẠM DỪNG';
+        btnPause.classList.toggle('active', paused);
+      });
+    }
+
+    if (btnReset) {
+      btnReset.addEventListener('click', function () {
+        resetSpider();
+        buildBabies();
+        particles = [];
+        paused = false;
+        if (btnPause) {
+          btnPause.textContent = 'TẠM DỪNG';
+          btnPause.classList.remove('active');
+        }
+      });
+    }
+
+    // ======================================================================
+    // KHỞI TẠO
+    // ======================================================================
     resize();
     requestAnimationFrame(loop);
+
+    if (window.CONFIG && window.CONFIG.DEBUG) {
+      console.log('[Spider] Đã khởi động, chế độ:', isBackground ? 'nền' : 'card');
+    }
   });
 })();
