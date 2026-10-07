@@ -1,6 +1,6 @@
 /* ==========================================================================
    KHỐI THÔNG BÁO LỖI
-   Định nghĩa khung, mã lỗi, tiêu đề, mô tả, nút và liên kết hỗ trợ
+   Khung, mã lỗi, tiêu đề, mô tả, nút, liên kết hỗ trợ và mã lỗi chi tiết
    ========================================================================== */
 
 /* --------------------------------------------------------------------------
@@ -91,6 +91,34 @@
 }
 
 /* --------------------------------------------------------------------------
+   MÃ LỖI CHI TIẾT
+   -------------------------------------------------------------------------- */
+.error-detail {
+  position: relative;
+  z-index: 1;
+  margin-top: var(--space-base);
+  display: inline-block;
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: rgba(0, 0, 0, 0.3);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  max-width: 100%;
+  overflow-x: auto;
+  white-space: nowrap;
+  user-select: text;
+}
+
+.error-detail .label {
+  color: var(--text-dim);
+  margin-right: 6px;
+  text-transform: uppercase;
+}
+
+/* --------------------------------------------------------------------------
    NHÓM NÚT
    -------------------------------------------------------------------------- */
 .error-actions {
@@ -151,6 +179,17 @@
   background: rgba(201, 74, 74, 0.2);
 }
 
+.error-button.ghost {
+  border-color: transparent;
+  color: var(--text-muted);
+}
+
+.error-button.ghost:hover {
+  color: var(--text-strong);
+  border-color: var(--border);
+  background: transparent;
+}
+
 /* --------------------------------------------------------------------------
    LIÊN KẾT HỖ TRỢ
    -------------------------------------------------------------------------- */
@@ -203,6 +242,10 @@
   text-shadow: 0 0 32px rgba(201, 162, 39, 0.4);
 }
 
+.error-card[data-code="405"] .error-code {
+  text-shadow: 0 0 32px rgba(90, 138, 255, 0.4);
+}
+
 /* --------------------------------------------------------------------------
    ĐIỀU CHỈNH MÀN HÌNH NHỎ
    -------------------------------------------------------------------------- */
@@ -223,6 +266,11 @@
 
   .error-message {
     font-size: var(--fs-base);
+  }
+
+  .error-detail {
+    font-size: 10px;
+    padding: 6px 10px;
   }
 
   .error-actions {
@@ -274,7 +322,8 @@
 
   .error-code,
   .error-title,
-  .error-message {
+  .error-message,
+  .error-detail {
     color: #ffffff;
   }
 
@@ -312,7 +361,8 @@
 
   .error-code,
   .error-title,
-  .error-message {
+  .error-message,
+  .error-detail {
     color: #000000;
     text-shadow: none;
   }
